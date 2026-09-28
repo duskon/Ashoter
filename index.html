@@ -1,0 +1,4947 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Ashooter - Space Typing Shooter</title>
+  <meta name="description" content="A web-based typing space shooter game inspired by ZType, built with Phaser 3." />
+  <meta property="og:title" content="Ashooter - Space Typing Shooter" />
+  <meta property="og:description" content="A web-based typing space shooter game inspired by ZType, built with Phaser 3." />
+  <meta property="og:type" content="website" />
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 96 96'%3E%3Crect width='96' height='96' rx='18' fill='%23070912'/%3E%3Cdefs%3E%3ClinearGradient id='rim' x1='0' y1='10' x2='0' y2='82' gradientUnits='userSpaceOnUse'%3E%3Cstop offset='0%25' stop-color='%234affff'/%3E%3Cstop offset='35%25' stop-color='%2323d5d8'/%3E%3Cstop offset='100%25' stop-color='%2318929f'/%3E%3C/linearGradient%3E%3CradialGradient id='core' cx='48' cy='42' r='22' gradientUnits='userSpaceOnUse'%3E%3Cstop offset='0%25' stop-color='%2329c4d2'/%3E%3Cstop offset='65%25' stop-color='%230e5865'/%3E%3Cstop offset='100%25' stop-color='%23062e37'/%3E%3C/radialGradient%3E%3C/defs%3E%3Crect x='42' y='11' width='12' height='13' rx='1' fill='%23d8e6ee'/%3E%3Cpath d='M48 12 L84 59 L79 74 L63 68 L56 79 Q48 74 40 79 L33 68 L17 74 L12 59 Z' fill='url(%23rim)'/%3E%3Cpath d='M48 23 L76 58 L73 67 L61 62 L54 72 Q48 67 42 72 L35 62 L23 67 L20 58 Z' fill='%2304232c'/%3E%3Cpolygon points='48,23 23,56 38,61' fill='%23167f8b'/%3E%3Cpolygon points='48,23 73,56 58,61' fill='%23167f8b'/%3E%3Cpolygon points='48,23 56,48 48,57 40,48' fill='url(%23core)'/%3E%3Cpolygon points='40,48 48,57 56,48 58,61 48,66 38,61' fill='%23083b46'/%3E%3C/svg%3E" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Arimo:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Fira+Code:wght@400;500;600;700&family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400&family=Roboto+Mono:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Space+Mono:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/phaser@3.80.1/dist/phaser.min.js"></script>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    html, body {
+      background-color: #07080b;
+      color: #f8fafc;
+      font-family: 'JetBrains Mono', 'Roboto Mono', 'Fira Code', 'Space Mono', monospace;
+      overflow: hidden;
+      width: 100vw;
+      height: 100vh;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+    }
+
+    /* Ambient CRT / Space Glow background */
+    #ambient-bg {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: radial-gradient(circle at 50% 80%, rgba(255, 136, 0, 0.05) 0%, rgba(16, 185, 129, 0.04) 40%, rgba(7, 8, 11, 0.96) 78%, #040507 100%);
+      pointer-events: none;
+      z-index: 1;
+    }
+
+    #game-container {
+      position: fixed;
+      inset: 0;
+      z-index: 2;
+      width: 100vw;
+      height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0;
+      padding: 0;
+    }
+
+    canvas {
+      display: block;
+      margin: 0 !important;
+      border-radius: 4px;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      box-shadow: 0 0 40px rgba(0, 0, 0, 0.85), 0 0 20px rgba(255, 136, 0, 0.08);
+    }
+  </style>
+</head>
+<body>
+  <div id="ambient-bg"></div>
+  <div id="game-container"></div>
+  <!-- Hidden element forcing early web font rasterization before Phaser canvas creates text -->
+  <div id="font-preloader" style="position:absolute;left:-9999px;top:-9999px;visibility:hidden;font-size:32px;pointer-events:none;" aria-hidden="true">
+    <span style="font-family:'JetBrains Mono',monospace;font-weight:400;">font preload abcdefghijklmnopqrstuvwxyz 0123456789</span>
+    <span style="font-family:'JetBrains Mono',monospace;font-weight:700;">font preload abcdefghijklmnopqrstuvwxyz 0123456789</span>
+    <span style="font-family:'JetBrains Mono',monospace;font-weight:900;">font preload abcdefghijklmnopqrstuvwxyz 0123456789</span>
+    <span style="font-family:'Roboto Mono',monospace;font-weight:400;">font preload abcdefghijklmnopqrstuvwxyz 0123456789</span>
+    <span style="font-family:'Roboto Mono',monospace;font-weight:700;">font preload abcdefghijklmnopqrstuvwxyz 0123456789</span>
+    <span style="font-family:'Fira Code',monospace;font-weight:400;">font preload abcdefghijklmnopqrstuvwxyz 0123456789</span>
+    <span style="font-family:'Fira Code',monospace;font-weight:700;">font preload abcdefghijklmnopqrstuvwxyz 0123456789</span>
+    <span style="font-family:'Space Mono',monospace;font-weight:400;">font preload abcdefghijklmnopqrstuvwxyz 0123456789</span>
+    <span style="font-family:'Space Mono',monospace;font-weight:700;">font preload abcdefghijklmnopqrstuvwxyz 0123456789</span>
+    <span style="font-family:'Inter',sans-serif;font-weight:400;">font preload abcdefghijklmnopqrstuvwxyz 0123456789</span>
+    <span style="font-family:'Inter',sans-serif;font-weight:600;">font preload abcdefghijklmnopqrstuvwxyz 0123456789</span>
+    <span style="font-family:'Inter',sans-serif;font-weight:700;">font preload abcdefghijklmnopqrstuvwxyz 0123456789</span>
+    <span style="font-family:'Inter',sans-serif;font-weight:900;">font preload abcdefghijklmnopqrstuvwxyz 0123456789</span>
+  </div>
+
+  <script>
+    /* ==========================================================================
+       ASHOOTER: SPACE TYPING SHOOTER GAME ENGINE
+       Built with Phaser 3 & Custom Web Audio Synthesizer
+       ========================================================================== */
+
+    // --------------------------------------------------------------------------
+    // GLOBAL TYPOGRAPHY: Clear & Uniform Monospace and Clean Helvetica Sans Fonts
+    // --------------------------------------------------------------------------
+    const FONT_MONO = "JetBrains Mono, Roboto Mono, Fira Code, Space Mono, monospace";
+    const FONT_SANS = '"Helvetica Neue", Helvetica, "Arimo", Arial, sans-serif';
+    const FONT_CREDITS = '"Helvetica Neue", Helvetica, "Arimo", Arial, sans-serif';
+
+    const FontManager = {
+      currentSize: localStorage.getItem('ashooter_font_size') || 'large', // 'normal' (20px), 'large' (24px), 'xlarge' (28px)
+      getFontFamily() {
+        return FONT_MONO;
+      },
+      getFontSizeNumber() {
+        if (this.currentSize === 'xlarge') return 28;
+        if (this.currentSize === 'normal') return 20;
+        return 24; // 'large' (24px) by default, increased for high legibility
+      },
+      getFontSize() {
+        return `${this.getFontSizeNumber()}px`;
+      },
+      getSizeDisplayName() {
+        if (this.currentSize === 'xlarge') return 'extra large (28px)';
+        if (this.currentSize === 'normal') return 'normal (20px)';
+        return 'large (24px)';
+      },
+      toggleSize() {
+        const sizes = ['normal', 'large', 'xlarge'];
+        const nextIdx = (sizes.indexOf(this.currentSize) + 1) % sizes.length;
+        this.currentSize = sizes[nextIdx];
+        localStorage.setItem('ashooter_font_size', this.currentSize);
+        return this.currentSize;
+      }
+    };
+
+    // --------------------------------------------------------------------------
+    // 1. SOUND & MUSIC SYNTHESIZER (Pure Web Audio API - Zero External Files)
+    // --------------------------------------------------------------------------
+    class SoundEngine {
+      constructor() {
+        this.ctx = null;
+        this.isMuted = false;
+        this.isMusicMuted = false;
+        this.bgmPlaying = false;
+        this.bgmTimer = null;
+        this.currentStep = 0;
+        this.bpm = 124;
+        this.stepTime = (60 / 124) / 4; // 16th note duration in seconds
+        this.nextNoteTime = 0;
+        this.lookahead = 25.0; // ms
+        this.scheduleAheadTime = 0.1; // seconds
+        this.musicGain = null;
+        this.sfxGain = null;
+        this.altPitch = false;
+        this.soundVolume = 0.5;
+        this.musicVolume = 0.5;
+      }
+
+      init() {
+        if (!this.ctx) {
+          const AudioContext = window.AudioContext || window.webkitAudioContext;
+          if (AudioContext) {
+            this.ctx = new AudioContext();
+            this.musicGain = this.ctx.createGain();
+            this.musicGain.gain.setValueAtTime(this.isMusicMuted ? 0 : this.musicVolume * 0.5, this.ctx.currentTime);
+            this.musicGain.connect(this.ctx.destination);
+
+            this.sfxGain = this.ctx.createGain();
+            this.sfxGain.gain.setValueAtTime(this.isMuted ? 0 : this.soundVolume * 0.8, this.ctx.currentTime);
+            this.sfxGain.connect(this.ctx.destination);
+          }
+        }
+        if (this.ctx && this.ctx.state === 'suspended') {
+          this.ctx.resume();
+        }
+      }
+
+      setSoundVolume(val) {
+        this.soundVolume = Math.max(0, Math.min(1, Math.round(val * 10) / 10));
+        if (this.sfxGain && this.ctx) {
+          this.sfxGain.gain.setValueAtTime(this.isMuted ? 0 : this.soundVolume * 0.8, this.ctx.currentTime);
+        }
+        return this.soundVolume;
+      }
+
+      setMusicVolume(val) {
+        this.musicVolume = Math.max(0, Math.min(1, Math.round(val * 10) / 10));
+        if (this.musicGain && this.ctx) {
+          this.musicGain.gain.setValueAtTime(this.isMusicMuted ? 0 : this.musicVolume * 0.5, this.ctx.currentTime);
+        }
+        if (this.musicVolume > 0 && !this.bgmPlaying && !this.isMusicMuted) {
+          this.startBGM();
+        }
+        return this.musicVolume;
+      }
+
+      toggleMute() {
+        this.isMuted = !this.isMuted;
+        if (this.sfxGain && this.ctx) {
+          this.sfxGain.gain.setValueAtTime(this.isMuted ? 0 : this.soundVolume * 0.8, this.ctx.currentTime);
+        }
+        return this.isMuted;
+      }
+
+      toggleMusic() {
+        this.isMusicMuted = !this.isMusicMuted;
+        if (this.musicGain && this.ctx) {
+          this.musicGain.gain.setValueAtTime(this.isMusicMuted ? 0 : this.musicVolume * 0.5, this.ctx.currentTime);
+        }
+        if (!this.isMusicMuted && !this.bgmPlaying) {
+          this.startBGM();
+        }
+        return !this.isMusicMuted;
+      }
+
+      startBGM() {
+        this.init();
+        if (this.bgmPlaying || !this.ctx) return;
+        this.bgmPlaying = true;
+        this.currentStep = 0;
+        this.nextNoteTime = this.ctx.currentTime + 0.05;
+
+        const scheduler = () => {
+          if (!this.bgmPlaying) return;
+          while (this.nextNoteTime < this.ctx.currentTime + this.scheduleAheadTime) {
+            this.scheduleMusicStep(this.currentStep, this.nextNoteTime);
+            this.nextNoteTime += this.stepTime;
+            this.currentStep = (this.currentStep + 1) % 64; // 4-bar loop
+          }
+          this.bgmTimer = setTimeout(scheduler, this.lookahead);
+        };
+        scheduler();
+      }
+
+      stopBGM() {
+        this.bgmPlaying = false;
+        if (this.bgmTimer) {
+          clearTimeout(this.bgmTimer);
+          this.bgmTimer = null;
+        }
+      }
+
+      // Procedural 16th-note electro synthwave scheduler
+      scheduleMusicStep(step, time) {
+        if (!this.ctx || this.isMusicMuted) return;
+
+        const bar = Math.floor(step / 16); // 0 to 3
+        const stepInBar = step % 16;       // 0 to 15
+
+        // Chord progression: Am (A2) -> F (F2) -> C (C3) -> G (G2)
+        const rootFreqs = [110.00, 87.31, 130.81, 98.00]; // A2, F2, C3, G2
+        const rootFreq = rootFreqs[bar];
+
+        // 1. Kick drum on 1, 5, 9, 13
+        if (stepInBar === 0 || stepInBar === 4 || stepInBar === 8 || stepInBar === 12) {
+          const osc = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(140, time);
+          osc.frequency.exponentialRampToValueAtTime(32, time + 0.09);
+          gain.gain.setValueAtTime(0.45, time);
+          gain.gain.exponentialRampToValueAtTime(0.001, time + 0.09);
+          osc.connect(gain);
+          gain.connect(this.musicGain);
+          osc.start(time);
+          osc.stop(time + 0.1);
+        }
+
+        // 2. Snare / Clack on beats 2 and 4 (steps 4 and 12)
+        if (stepInBar === 4 || stepInBar === 12) {
+          // Noise burst
+          const bufSize = Math.floor(this.ctx.sampleRate * 0.08);
+          const buf = this.ctx.createBuffer(1, bufSize, this.ctx.sampleRate);
+          const data = buf.getChannelData(0);
+          for (let i = 0; i < bufSize; i++) data[i] = Math.random() * 2 - 1;
+          const noise = this.ctx.createBufferSource();
+          noise.buffer = buf;
+
+          const filter = this.ctx.createBiquadFilter();
+          filter.type = 'bandpass';
+          filter.frequency.setValueAtTime(1200, time);
+          filter.Q.setValueAtTime(1.5, time);
+
+          const gain = this.ctx.createGain();
+          gain.gain.setValueAtTime(0.22, time);
+          gain.gain.exponentialRampToValueAtTime(0.001, time + 0.08);
+
+          noise.connect(filter);
+          filter.connect(gain);
+          gain.connect(this.musicGain);
+          noise.start(time);
+        }
+
+        // 3. Hi-hats on offbeats
+        if (stepInBar % 2 === 1) {
+          const bufSize = Math.floor(this.ctx.sampleRate * 0.035);
+          const buf = this.ctx.createBuffer(1, bufSize, this.ctx.sampleRate);
+          const data = buf.getChannelData(0);
+          for (let i = 0; i < bufSize; i++) data[i] = Math.random() * 2 - 1;
+          const noise = this.ctx.createBufferSource();
+          noise.buffer = buf;
+
+          const filter = this.ctx.createBiquadFilter();
+          filter.type = 'highpass';
+          filter.frequency.setValueAtTime(7000, time);
+
+          const gain = this.ctx.createGain();
+          const vol = stepInBar === 14 ? 0.15 : 0.07;
+          gain.gain.setValueAtTime(vol, time);
+          gain.gain.exponentialRampToValueAtTime(0.001, time + (stepInBar === 14 ? 0.07 : 0.03));
+
+          noise.connect(filter);
+          filter.connect(gain);
+          gain.connect(this.musicGain);
+          noise.start(time);
+        }
+
+        // 4. Driving Bass Synth (16th-note pulse with filter modulation)
+        const bassOsc = this.ctx.createOscillator();
+        const bassFilter = this.ctx.createBiquadFilter();
+        const bassGain = this.ctx.createGain();
+
+        bassOsc.type = 'sawtooth';
+        // Octave leap on steps 6 and 14
+        const freqMult = (stepInBar === 6 || stepInBar === 14) ? 2 : (stepInBar === 10 ? 1.5 : 1);
+        bassOsc.frequency.setValueAtTime(rootFreq * freqMult, time);
+
+        bassFilter.type = 'lowpass';
+        bassFilter.frequency.setValueAtTime(stepInBar % 4 === 0 ? 900 : 450, time);
+        bassFilter.Q.setValueAtTime(4.0, time);
+
+        bassGain.gain.setValueAtTime(0.18, time);
+        bassGain.gain.exponentialRampToValueAtTime(0.001, time + 0.11);
+
+        bassOsc.connect(bassFilter);
+        bassFilter.connect(bassGain);
+        bassGain.connect(this.musicGain);
+
+        bassOsc.start(time);
+        bassOsc.stop(time + 0.12);
+
+        // 5. Arpeggio lead notes
+        const arpPattern = [0, 7, 12, 15, 12, 7, 19, 15, 0, 7, 12, 19, 15, 12, 7, 0];
+        const semitone = arpPattern[stepInBar];
+        const leadFreq = rootFreq * Math.pow(2, (semitone + 12) / 12);
+
+        const leadOsc = this.ctx.createOscillator();
+        const leadGain = this.ctx.createGain();
+        leadOsc.type = 'triangle';
+        leadOsc.frequency.setValueAtTime(leadFreq, time);
+
+        leadGain.gain.setValueAtTime(0.06, time);
+        leadGain.gain.exponentialRampToValueAtTime(0.001, time + 0.08);
+
+        leadOsc.connect(leadGain);
+        leadGain.connect(this.musicGain);
+        leadOsc.start(time);
+        leadOsc.stop(time + 0.09);
+      }
+
+      // Laser blaster: alternating pitch for left and right cannons
+      laser() {
+        if (this.isMuted) return;
+        this.init();
+        if (!this.ctx) return;
+        const now = this.ctx.currentTime;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+
+        this.altPitch = !this.altPitch;
+        const startFreq = this.altPitch ? 920 : 840;
+
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(startFreq, now);
+        osc.frequency.exponentialRampToValueAtTime(150, now + 0.075);
+
+        gain.gain.setValueAtTime(0.22, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.075);
+
+        osc.connect(gain);
+        gain.connect(this.sfxGain || this.ctx.destination);
+
+        osc.start(now);
+        osc.stop(now + 0.08);
+      }
+
+      // Lock-on chirp: dual ascending chime
+      lock() {
+        if (this.isMuted) return;
+        this.init();
+        if (!this.ctx) return;
+        const now = this.ctx.currentTime;
+
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(587.33, now); // D5
+        osc.frequency.setValueAtTime(880, now + 0.04); // A5
+
+        gain.gain.setValueAtTime(0.15, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.12);
+
+        osc.connect(gain);
+        gain.connect(this.sfxGain || this.ctx.destination);
+
+        osc.start(now);
+        osc.stop(now + 0.13);
+      }
+
+      // Correct letter hit on enemy
+      hit() {
+        if (this.isMuted) return;
+        this.init();
+        if (!this.ctx) return;
+        const now = this.ctx.currentTime;
+
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(650, now);
+        osc.frequency.exponentialRampToValueAtTime(300, now + 0.05);
+
+        gain.gain.setValueAtTime(0.12, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.05);
+
+        osc.connect(gain);
+        gain.connect(this.sfxGain || this.ctx.destination);
+
+        osc.start(now);
+        osc.stop(now + 0.06);
+      }
+
+      // Error buzzer: gentle low buzz
+      error() {
+        if (this.isMuted) return;
+        this.init();
+        if (!this.ctx) return;
+        const now = this.ctx.currentTime;
+
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(140, now);
+        osc.frequency.linearRampToValueAtTime(110, now + 0.09);
+
+        gain.gain.setValueAtTime(0.15, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.09);
+
+        osc.connect(gain);
+        gain.connect(this.sfxGain || this.ctx.destination);
+
+        osc.start(now);
+        osc.stop(now + 0.1);
+      }
+
+      // Boss impact resonance
+      bossHit() {
+        if (this.isMuted) return;
+        this.init();
+        if (!this.ctx) return;
+        const now = this.ctx.currentTime;
+
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(260, now);
+        osc.frequency.exponentialRampToValueAtTime(60, now + 0.2);
+
+        gain.gain.setValueAtTime(0.3, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.2);
+
+        osc.connect(gain);
+        gain.connect(this.sfxGain || this.ctx.destination);
+
+        osc.start(now);
+        osc.stop(now + 0.21);
+      }
+
+      // Enemy explosion: white noise buffer + lowpass filter sweep + bass thump
+      explosion() {
+        if (this.isMuted) return;
+        this.init();
+        if (!this.ctx) return;
+        const now = this.ctx.currentTime;
+
+        const bufferSize = Math.floor(this.ctx.sampleRate * 0.25);
+        const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
+        const data = buffer.getChannelData(0);
+        for (let i = 0; i < bufferSize; i++) data[i] = Math.random() * 2 - 1;
+
+        const noise = this.ctx.createBufferSource();
+        noise.buffer = buffer;
+
+        const filter = this.ctx.createBiquadFilter();
+        filter.type = 'lowpass';
+        filter.frequency.setValueAtTime(900, now);
+        filter.frequency.exponentialRampToValueAtTime(80, now + 0.25);
+
+        const noiseGain = this.ctx.createGain();
+        noiseGain.gain.setValueAtTime(0.25, now);
+        noiseGain.gain.exponentialRampToValueAtTime(0.001, now + 0.25);
+
+        noise.connect(filter);
+        filter.connect(noiseGain);
+        noiseGain.connect(this.sfxGain || this.ctx.destination);
+        noise.start(now);
+
+        const sub = this.ctx.createOscillator();
+        const subGain = this.ctx.createGain();
+        sub.type = 'sine';
+        sub.frequency.setValueAtTime(120, now);
+        sub.frequency.exponentialRampToValueAtTime(30, now + 0.25);
+
+        subGain.gain.setValueAtTime(0.3, now);
+        subGain.gain.exponentialRampToValueAtTime(0.001, now + 0.25);
+
+        sub.connect(subGain);
+        subGain.connect(this.sfxGain || this.ctx.destination);
+        sub.start(now);
+        sub.stop(now + 0.26);
+      }
+
+      // Shield damage impact
+      shieldHit() {
+        if (this.isMuted) return;
+        this.init();
+        if (!this.ctx) return;
+        const now = this.ctx.currentTime;
+
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+
+        osc.type = 'square';
+        osc.frequency.setValueAtTime(220, now);
+        osc.frequency.exponentialRampToValueAtTime(55, now + 0.3);
+
+        gain.gain.setValueAtTime(0.35, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.3);
+
+        osc.connect(gain);
+        gain.connect(this.sfxGain || this.ctx.destination);
+
+        osc.start(now);
+        osc.stop(now + 0.32);
+      }
+
+      // Wave clear fanfare
+      waveClear() {
+        if (this.isMuted) return;
+        this.init();
+        if (!this.ctx) return;
+        const now = this.ctx.currentTime;
+        const notes = [523.25, 659.25, 783.99, 1046.5]; // C5, E5, G5, C6
+
+        notes.forEach((freq, index) => {
+          const osc = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+          const startTime = now + index * 0.08;
+
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(freq, startTime);
+
+          gain.gain.setValueAtTime(0.2, startTime);
+          gain.gain.exponentialRampToValueAtTime(0.001, startTime + 0.25);
+
+          osc.connect(gain);
+          gain.connect(this.sfxGain || this.ctx.destination);
+
+          osc.start(startTime);
+          osc.stop(startTime + 0.26);
+        });
+      }
+
+      // Game over rumble
+      gameOver() {
+        if (this.isMuted) return;
+        this.init();
+        if (!this.ctx) return;
+        const now = this.ctx.currentTime;
+
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(150, now);
+        osc.frequency.exponentialRampToValueAtTime(30, now + 0.8);
+
+        gain.gain.setValueAtTime(0.4, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.8);
+
+        osc.connect(gain);
+        gain.connect(this.sfxGain || this.ctx.destination);
+
+        osc.start(now);
+        osc.stop(now + 0.85);
+      }
+
+      // EMP Shockwave Blast
+      emp() {
+        if (this.isMuted) return;
+        this.init();
+        if (!this.ctx) return;
+        const now = this.ctx.currentTime;
+
+        const sub = this.ctx.createOscillator();
+        const subGain = this.ctx.createGain();
+        sub.type = 'sawtooth';
+        sub.frequency.setValueAtTime(180, now);
+        sub.frequency.exponentialRampToValueAtTime(25, now + 0.6);
+
+        subGain.gain.setValueAtTime(0.45, now);
+        subGain.gain.exponentialRampToValueAtTime(0.001, now + 0.6);
+
+        sub.connect(subGain);
+        subGain.connect(this.sfxGain || this.ctx.destination);
+        sub.start(now);
+        sub.stop(now + 0.62);
+
+        const bufferSize = Math.floor(this.ctx.sampleRate * 0.5);
+        const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
+        const data = buffer.getChannelData(0);
+        for (let i = 0; i < bufferSize; i++) data[i] = Math.random() * 2 - 1;
+
+        const noise = this.ctx.createBufferSource();
+        noise.buffer = buffer;
+
+        const filter = this.ctx.createBiquadFilter();
+        filter.type = 'lowpass';
+        filter.frequency.setValueAtTime(2400, now);
+        filter.frequency.exponentialRampToValueAtTime(80, now + 0.5);
+
+        const noiseGain = this.ctx.createGain();
+        noiseGain.gain.setValueAtTime(0.4, now);
+        noiseGain.gain.exponentialRampToValueAtTime(0.001, now + 0.5);
+
+        noise.connect(filter);
+        filter.connect(noiseGain);
+        noiseGain.connect(this.sfxGain || this.ctx.destination);
+        noise.start(now);
+      }
+
+      // Multiplier Upgrade Chime
+      multiplierUp() {
+        if (this.isMuted) return;
+        this.init();
+        if (!this.ctx) return;
+        const now = this.ctx.currentTime;
+        const notes = [587.33, 739.99, 880.00, 1174.66]; // D5, F#5, A5, D6
+        notes.forEach((freq, idx) => {
+          const osc = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+          const st = now + idx * 0.055;
+          osc.type = 'triangle';
+          osc.frequency.setValueAtTime(freq, st);
+          gain.gain.setValueAtTime(0.18, st);
+          gain.gain.exponentialRampToValueAtTime(0.001, st + 0.22);
+          osc.connect(gain);
+          gain.connect(this.sfxGain || this.ctx.destination);
+          osc.start(st);
+          osc.stop(st + 0.24);
+        });
+      }
+    }
+
+    const sound = new SoundEngine();
+
+    // --------------------------------------------------------------------------
+    // 2. ZTYPE WORD PACKS & CUSTOM TEXT PARSER ENGINE
+    // Standard, Developer / Code, Sci-Fi Universe, Speed Drill, & Custom Text
+    // --------------------------------------------------------------------------
+    const WORD_PACKS = {
+      standard: {
+        name: 'STANDARD',
+        short: [
+          'ACE', 'AIM', 'AIR', 'ARK', 'ARM', 'ASH', 'AXE', 'BAY', 'BEAM', 'BITS',
+          'BLOW', 'BLUE', 'BOLT', 'BURN', 'BYTE', 'CAMP', 'CHIP', 'CLAN', 'CODE', 'COIL',
+          'COLD', 'CORE', 'CRUX', 'DART', 'DASH', 'DATA', 'DAWN', 'DECK', 'DEEP', 'DOCK',
+          'DOOM', 'DROP', 'DUST', 'ECHO', 'EDGE', 'EMIT', 'FAST', 'FIRE', 'FIST', 'FLUX',
+          'FONT', 'FORK', 'FREE', 'FUEL', 'FUSE', 'GAIN', 'GATE', 'GEAR', 'GLOW', 'GRID',
+          'GRIP', 'GULF', 'HALO', 'HARD', 'HAWK', 'HAZE', 'HEAT', 'HELM', 'HOLD', 'HORN',
+          'HOST', 'HULL', 'ICON', 'IRON', 'JOLT', 'JUMP', 'KEEN', 'KERN', 'KICK', 'LACE',
+          'LAND', 'LEAD', 'LEAP', 'LIFT', 'LINK', 'LOAD', 'LOCK', 'LOOP', 'LUNA', 'LURK',
+          'MARK', 'MARS', 'MASS', 'MESH', 'MINE', 'MIST', 'MOON', 'NANO', 'NEON', 'NODE',
+          'NOVA', 'ONCE', 'OPAL', 'PACK', 'PATH', 'PEAK', 'PING', 'PIPE', 'PLOT', 'PLUG',
+          'POLE', 'PORT', 'PURE', 'RACK', 'RAID', 'RAMP', 'RAYS', 'REEL', 'REST', 'RIFT',
+          'RING', 'ROOT', 'RUSH', 'RUST', 'SAFE', 'SAGE', 'SCAN', 'SEED', 'SHIP', 'SIGN',
+          'SINK', 'SLAM', 'SLOT', 'SOIL', 'SPAN', 'STAR', 'STEM', 'TANK', 'TAPE', 'TEAM',
+          'TIDE', 'TIME', 'TRAP', 'TREK', 'TUBE', 'UNIT', 'VAIN', 'VALE', 'VAST', 'VENT',
+          'VIBE', 'VOID', 'VOLT', 'WAIT', 'WARP', 'WAVE', 'WIDE', 'WIND', 'WING', 'WIRE',
+          'WISP', 'YAWN', 'YOKE', 'ZEAL', 'ZERO', 'ZONE'
+        ],
+        medium: [
+          'AIRLOCK', 'ALIDADE', 'ANOMALY', 'ANTENNA', 'APOLLO', 'ASTRAL', 'ATOMIZE',
+          'AVIONIC', 'BEACON', 'BOOSTER', 'CALIBER', 'CAPSULE', 'CARRIER', 'CENTAUR',
+          'CIPHER', 'CLUSTER', 'COCKPIT', 'COMET', 'COMMAND', 'CONDUIT', 'CORONA',
+          'COSMOS', 'CRUISER', 'CURRENT', 'CYBORG', 'DEFENSE', 'DENSITY', 'ECLIPSE',
+          'EMITTER', 'ENCLAVE', 'ENERGY', 'ENGINE', 'ENTROPY', 'EPISODE', 'ESCORT',
+          'EXHAUST', 'FALCON', 'FIGHTER', 'FISSION', 'FREIGHT', 'FRIGATE', 'FUSION',
+          'GALAXY', 'GENESIS', 'GRAVITY', 'HORIZON', 'IMPULSE', 'INERTIA', 'IONCORE',
+          'KINETIC', 'LASER', 'LAUNCH', 'MAGNET', 'MATRIX', 'METEOR', 'MISSILE',
+          'MODULE', 'MONITOR', 'NEBULA', 'NEUTRON', 'NUCLEUS', 'ORBITAL', 'OUTPOST',
+          'PARADOX', 'PATRIOT', 'PAYLOAD', 'PHOTON', 'PLANET', 'PLASMA', 'PLATFORM',
+          'PROTOCOL', 'PROXIMA', 'PULSAR', 'QUANTUM', 'QUASAR', 'RADIAL', 'RADIAN',
+          'RADIUS', 'REACTOR', 'ROCKET', 'ROTOR', 'ROVER', 'RUNWAY', 'SCANNER',
+          'SECTOR', 'SENSOR', 'SHIELD', 'SHUTTLE', 'SIGNAL', 'SILICON', 'SOLARIS',
+          'SPECTRA', 'STATION', 'STEALTH', 'STELLAR', 'SYSTEM', 'TACTICAL', 'TANKER',
+          'TELEMET', 'THRUST', 'TRACER', 'TRANSIT', 'VECTOR', 'VELOCITY', 'VENUS',
+          'VENTURE', 'VORTEX', 'VOYAGER', 'WARPING', 'ZENITH'
+        ],
+        long: [
+          'ACCELERATION', 'AERODYNAMIC', 'ANTIMATTER', 'ASTROPHYSICS', 'ATMOSPHERE',
+          'BATTLECRUISER', 'BATTLESHIP', 'CARTOGRAPHY', 'CHRONOSPHERE', 'CIVILIZATION',
+          'COMBUSTION', 'COMMUNICATION', 'CONSTELLATION', 'COORDINATES', 'CRYOGENICS',
+          'DECOMMISSION', 'DECELERATION', 'DEPLOYMENT', 'DISPERSION', 'DREADNOUGHT',
+          'ELECTRODYNAMIC', 'ELECTROMAGNETIC', 'EQUILIBRIUM', 'EXOPLANETARY', 'EXTERMINATION',
+          'EXTRAVEHICULAR', 'FUNDAMENTAL', 'GRAVITATIONAL', 'HELIOSPHERE', 'HYPERDRIVE',
+          'HYPERVELOCITY', 'ILLUMINATION', 'INTERCEPTOR', 'INTERGALACTIC', 'INTERPLANETARY',
+          'INTERSTELLAR', 'IONIZATION', 'MAGNETOSPHERE', 'MICROGRAVITY', 'NANOTECHNOLOGY',
+          'NAVIGATION', 'OBSERVATORY', 'ORBITALSTATION', 'PHOTOIONIZATION', 'PLANETARIUM',
+          'PRESSURIZATION', 'PROPULSION', 'QUANTUMSTATE', 'RECONNAISSANCE', 'REVERBERATION',
+          'SEMICONDUCTOR', 'SINGULARITY', 'SPECTROMETER', 'STRATOSPHERE', 'SUPERNOVA',
+          'SURVEILLANCE', 'TACHYONBEAM', 'TELEMETRIES', 'TERRAFORMING', 'TRAJECTORY',
+          'TRANSMISSION', 'TRANSPONDER', 'VAPORIZATION', 'WARPSEQUENCE', 'WAVELENGTH'
+        ],
+        boss: [
+          'EXTRATERRESTRIAL', 'SUPERCONDUCTIVITY', 'INTERSTELLARWARP', 'ELECTROMAGNETISM',
+          'DECONTAMINATION', 'QUANTUMSUPERIORITY', 'BIOTECHNOLOGICAL', 'ASTROPHYSICALDATA',
+          'CHRONODISPLACEMENT', 'HYPERSPACEPROTOCOL', 'TELECOMMUNICATION', 'MULTIDIMENSIONAL',
+          'EXTRAGALACTICBEAM', 'GRAVITATIONALPULL', 'THERMONUCLEARBOMB', 'ANTIMATTERREACTION'
+        ]
+      },
+
+      code: {
+        name: 'JAVASCRIPT / DEV',
+        short: [
+          'BYTE', 'NULL', 'VOID', 'TRUE', 'BOOL', 'EVAL', 'BIND', 'CALL', 'SYNC', 'NODE',
+          'JSON', 'HTML', 'AJAX', 'FETCH', 'REST', 'CURL', 'PORT', 'HOST', 'ROOT', 'TREE',
+          'HEAP', 'HASH', 'KEYS', 'PUSH', 'MAPS', 'FLAT', 'JOIN', 'FIND', 'SOME', 'EACH',
+          'LOOP', 'GOTO', 'BREAK', 'CASE', 'INIT', 'TEST', 'FAIL', 'PASS', 'WARN', 'DOCS',
+          'REPO', 'PULL', 'PUSH', 'FORK', 'CLONE', 'DIFF', 'MERGE', 'BASE', 'USER', 'AUTH'
+        ],
+        medium: [
+          'PROMISE', 'FUNCTION', 'BOOLEAN', 'INTEGER', 'OBJECTS', 'ARRAYS', 'STRINGS',
+          'CLOSURE', 'CLASSES', 'MODULES', 'EXPORTS', 'IMPORTS', 'DYNAMIC', 'ROUTING',
+          'PAYLOAD', 'REQUEST', 'RESPONSE', 'STORAGE', 'CONTEXT', 'VIRTUAL', 'MUTATION',
+          'REDUCER', 'DISPATCH', 'HANDLERS', 'BACKEND', 'FRONTEND', 'SANDBOX', 'BROWSER',
+          'CONSOLE', 'PACKAGES', 'VERSION', 'RELEASE', 'BUILDER', 'PARSERS', 'COMPILER',
+          'WEBPACK', 'TYPESCRIPT', 'RUNTIME', 'VARIABLE', 'CONSTANT', 'ITERATOR', 'GENERATOR'
+        ],
+        long: [
+          'ASYNCHRONOUS', 'CONSTRUCTOR', 'PROTOTYPES', 'ADDEVENTLISTENER', 'QUERYSELECTOR',
+          'LOCALSTORAGE', 'SETINTERVAL', 'SETTIMEOUT', 'DESTRUCTURING', 'POLYMORPHISM',
+          'ENCAPSULATION', 'MICROSERVICES', 'AUTHENTICATION', 'AUTHORIZATION', 'SYNCHRONIZATION',
+          'RECURSIONTREE', 'OPTIMIZATION', 'DEPENDENCIES', 'CONFIGURATIONS', 'MIDDLEWARES',
+          'INTERCEPTORS', 'DOCUMENTATION', 'STATEFULLNESS', 'REACTIVITYTREE', 'TOKENIZATION'
+        ],
+        boss: [
+          'POLYMORPHICDESIGN', 'MICROSERVICESMESH', 'CONCURRENTMODEENGINE', 'EVENTDRIVENPATTERN',
+          'CONTINUOUSINTEGRATION', 'ABSTRACTSYNTAXFACTORY', 'TYPESCRIPTTYPECHECKER', 'IMMUTABILITYSTATE'
+        ]
+      },
+
+      scifi: {
+        name: 'SCI-FI UNIVERSE',
+        short: [
+          'VOID', 'STAR', 'NOVA', 'WARP', 'LUNA', 'MARS', 'SOLAR', 'BEAM', 'HULL', 'CORE',
+          'HELM', 'ION', 'FLUX', 'AXIS', 'DRIFT', 'ORBIT', 'PULSE', 'RAYON', 'GULF', 'NEON'
+        ],
+        medium: [
+          'ECLIPSE', 'NEBULA', 'PULSAR', 'QUASAR', 'GRAVITY', 'APOLLO', 'VOYAGER', 'SHUTTLE',
+          'ROCKET', 'BOOSTER', 'PLASMA', 'HORIZON', 'CENTAUR', 'COSMOS', 'METEOR', 'ORBITAL'
+        ],
+        long: [
+          'SINGULARITY', 'ANTIMATTER', 'ASTROPHYSICS', 'TACHYONBEAM', 'SUPERNOVA', 'CHRONOSPHERE',
+          'HYPERSPACE', 'EXOPLANETARY', 'INTERSTELLAR', 'CONSTELLATION', 'EVENTHORIZON', 'MAGNETOSPHERE'
+        ],
+        boss: [
+          'EXTRATERRESTRIALWARP', 'MULTIDIMENSIONALVOID', 'SUPERMASSIVEBLACKHOLE', 'INTERGALACTICFLEET'
+        ]
+      },
+
+      speed: {
+        name: 'SPEED DRILL',
+        short: [
+          'RUN', 'ZAP', 'HIT', 'FAST', 'DART', 'BOLT', 'SNAP', 'JOLT', 'FLUX', 'BEAM',
+          'CHIP', 'DROP', 'FIRE', 'GLOW', 'GRID', 'JUMP', 'LINK', 'LOCK', 'LOOP', 'MINE',
+          'NODE', 'PACK', 'PATH', 'PEAK', 'PING', 'PLOT', 'PORT', 'RAID', 'RAMP', 'REST',
+          'SCAN', 'SHIP', 'SPAN', 'TRAP', 'TUBE', 'UNIT', 'VENT', 'VIBE', 'WARP', 'ZONE'
+        ],
+        medium: [
+          'BLAST', 'BLINK', 'BURST', 'CRASH', 'FLASH', 'LIGHT', 'QUICK', 'SHOCK', 'SMASH',
+          'SONIC', 'SPEED', 'SPARK', 'SURGE', 'SWIFT', 'TURBO', 'VAPOR', 'VELOX', 'ZAPPY'
+        ],
+        long: [
+          'HYPERDRIVE', 'SUPERSONIC', 'TURBOBOOST', 'OVERCLOCK', 'ACCELERATE', 'LIGHTSPEED'
+        ],
+        boss: [
+          'MAXIMUMOVERDRIVE', 'ULTRAHYPERVELOCITY', 'QUANTUMSPEEDBURST'
+        ]
+      },
+
+      custom: {
+        name: 'CUSTOM TEXT',
+        short: ['RUN', 'FAST', 'CODE', 'TEST'],
+        medium: ['CUSTOM', 'TYPING', 'SYSTEM'],
+        long: ['CUSTOMTEXTPACK', 'TYPINGCHALLENGE'],
+        boss: ['MASTERCHALLENGER']
+      }
+    };
+
+    let activeWordPackKey = 'standard';
+
+    // Parse any user-pasted text into valid categorized ZType word bank
+    function parseCustomText(text) {
+      if (!text || typeof text !== 'string') return null;
+
+      // Extract all words, convert to uppercase, keep only letters A-Z
+      const rawWords = text.toUpperCase().replace(/[^A-Z\s]/g, ' ').split(/\s+/);
+      const uniqueWords = Array.from(new Set(rawWords.filter(w => w.length >= 2 && w.length <= 22)));
+
+      if (uniqueWords.length === 0) return null;
+
+      const short = uniqueWords.filter(w => w.length <= 4);
+      const medium = uniqueWords.filter(w => w.length >= 5 && w.length <= 7);
+      const long = uniqueWords.filter(w => w.length >= 8 && w.length <= 12);
+      const boss = uniqueWords.filter(w => w.length >= 13);
+
+      // Ensure fallbacks so the user's custom words are always fed to the game
+      WORD_PACKS.custom = {
+        name: 'CUSTOM TEXT',
+        short: short.length > 0 ? short : uniqueWords,
+        medium: medium.length > 0 ? medium : uniqueWords,
+        long: long.length > 0 ? long : uniqueWords,
+        boss: boss.length > 0 ? boss : uniqueWords
+      };
+
+      return uniqueWords.length;
+    }
+
+    function setCustomTextPack(text) {
+      const count = parseCustomText(text);
+      if (count && count > 0) {
+        activeWordPackKey = 'custom';
+        return count;
+      }
+      return 0;
+    }
+
+    // Helper to get random item from current active pack (always lowercase as in authentic ZType)
+    function getRandomWord(category, excludeSet = new Set()) {
+      const pack = WORD_PACKS[activeWordPackKey] || WORD_PACKS.standard;
+      const pool = pack[category] || pack.short || WORD_PACKS.standard.short;
+      const candidates = pool.filter(w => !excludeSet.has(w.toLowerCase()));
+      const source = candidates.length > 0 ? candidates : pool;
+      return source[Math.floor(Math.random() * source.length)].toLowerCase();
+    }
+
+    // --------------------------------------------------------------------------
+    // 3. SCENE 1: BOOT & PROCEDURAL ASSET GENERATOR
+    // Generates crystal-clear vector textures directly on HTML Canvas
+    // --------------------------------------------------------------------------
+    class BootScene extends Phaser.Scene {
+      constructor() {
+        super({ key: 'BootScene' });
+      }
+
+      preload() {
+        // Procedural vector assets generated directly in create()
+      }
+
+      create() {
+        this.generateSpaceNebulaTexture();
+        this.generatePlayerShipTexture();
+        this.generateScoutAsteroidTexture();
+        this.generateAlienFighterTexture();
+        this.generateDreadnoughtTexture();
+        this.generateMineTexture();
+        this.generateLaserTexture();
+        this.generateSparkTexture();
+        this.generateReticleTexture();
+        this.generateTargetDroneTexture();
+        this.generateEMPHexagonTexture();
+
+        // Ensure clear and uniform monospace / clean sans fonts are loaded in the browser
+        if (document.fonts && document.fonts.ready) {
+          document.fonts.ready.then(() => {
+            this.scene.start('MenuScene');
+          }).catch(() => {
+            this.scene.start('MenuScene');
+          });
+        } else {
+          this.scene.start('MenuScene');
+        }
+      }
+
+      // Procedural Deep Space Nebula Texture (Neutral dark obsidian space with warm amber & emerald dust)
+      generateSpaceNebulaTexture() {
+        if (this.textures.exists('game_bg')) return;
+        const canvas = this.textures.createCanvas('game_bg', 512, 512);
+        const ctx = canvas.getContext();
+        const grad = ctx.createRadialGradient(256, 256, 10, 256, 256, 256);
+        grad.addColorStop(0, '#101216');
+        grad.addColorStop(0.55, '#090a0d');
+        grad.addColorStop(1, '#050608');
+        ctx.fillStyle = grad;
+        ctx.fillRect(0, 0, 512, 512);
+
+        // Soft atmospheric cosmic dust (warm amber & subtle emerald instead of heavy blue)
+        for (let i = 0; i < 7; i++) {
+          const cx = (i * 73 + 45) % 512;
+          const cy = (i * 97 + 60) % 512;
+          const cr = 80 + (i * 20) % 100;
+          const nGrad = ctx.createRadialGradient(cx, cy, 0, cx, cy, cr);
+          nGrad.addColorStop(0, i % 2 === 0 ? 'rgba(255, 136, 0, 0.045)' : 'rgba(16, 185, 129, 0.04)');
+          nGrad.addColorStop(1, 'rgba(0, 0, 0, 0)');
+          ctx.fillStyle = nGrad;
+          ctx.beginPath();
+          ctx.arc(cx, cy, cr, 0, Math.PI * 2);
+          ctx.fill();
+        }
+        canvas.refresh();
+      }
+
+      // Official Game Logo & Player Stealth Fighter (Faceted Cyan-Teal Origami Ship with Silver Nose Block)
+      generatePlayerShipTexture() {
+        const canvas = this.textures.createCanvas('player_ship', 96, 96);
+        const ctx = canvas.getContext();
+        ctx.clearRect(0, 0, 96, 96);
+
+        // 0. Soft ambient cyan glow above the nose tip
+        const topGlow = ctx.createRadialGradient(48, 20, 2, 48, 22, 28);
+        topGlow.addColorStop(0, 'rgba(36, 228, 255, 0.28)');
+        topGlow.addColorStop(0.6, 'rgba(18, 160, 195, 0.10)');
+        topGlow.addColorStop(1, 'rgba(0, 0, 0, 0)');
+        ctx.fillStyle = topGlow;
+        ctx.beginPath();
+        ctx.arc(48, 22, 28, 0, Math.PI * 2);
+        ctx.fill();
+
+        // 1. Silver-white rectangular muzzle block protruding behind the top apex
+        const muzzleGrad = ctx.createLinearGradient(42, 10, 54, 24);
+        muzzleGrad.addColorStop(0, '#e5f0f6');
+        muzzleGrad.addColorStop(1, '#bfd2dc');
+        ctx.fillStyle = muzzleGrad;
+        ctx.fillRect(42, 11, 12, 13);
+
+        // 2. Outer thick bevelled cyan-teal frame silhouette
+        ctx.save();
+        ctx.shadowColor = 'rgba(0, 0, 0, 0.7)';
+        ctx.shadowBlur = 7;
+        ctx.shadowOffsetY = 3;
+
+        const rimGrad = ctx.createLinearGradient(48, 12, 48, 80);
+        rimGrad.addColorStop(0, '#52ffff');
+        rimGrad.addColorStop(0.18, '#2ef2f2');
+        rimGrad.addColorStop(0.55, '#1eb4c2');
+        rimGrad.addColorStop(1, '#178896');
+
+        ctx.beginPath();
+        ctx.moveTo(48, 12);                 // Top sharp nose apex
+        ctx.lineTo(84, 59);                 // Right outer wingtip
+        ctx.lineTo(79, 74);                 // Right lower wing corner
+        ctx.lineTo(63, 68);                 // Right inner wing-root notch
+        ctx.lineTo(56, 79);                 // Right central tail tip
+        ctx.quadraticCurveTo(48, 74, 40, 79); // Curved center tail indent
+        ctx.lineTo(33, 68);                 // Left inner wing-root notch
+        ctx.lineTo(17, 74);                 // Left lower wing corner
+        ctx.lineTo(12, 59);                 // Left outer wingtip
+        ctx.closePath();
+        ctx.fillStyle = rimGrad;
+        ctx.fill();
+        ctx.restore();
+
+        // 3. Inner dark abyssal-teal recessed hull cavity
+        const cavityGrad = ctx.createLinearGradient(48, 23, 48, 73);
+        cavityGrad.addColorStop(0, '#06323d');
+        cavityGrad.addColorStop(1, '#031d25');
+
+        ctx.beginPath();
+        ctx.moveTo(48, 23);                 // Inner top apex
+        ctx.lineTo(76, 58);                 // Inner right wingtip
+        ctx.lineTo(73, 67);                 // Inner right lower corner
+        ctx.lineTo(61, 62);                 // Inner right wing-root
+        ctx.lineTo(54, 72);                 // Inner right tail point
+        ctx.lineTo(48, 65);                 // Inner center tail apex
+        ctx.lineTo(42, 72);                 // Inner left tail point
+        ctx.lineTo(35, 62);                 // Inner left wing-root
+        ctx.lineTo(23, 67);                 // Inner left lower corner
+        ctx.lineTo(20, 58);                 // Inner left wingtip
+        ctx.closePath();
+        ctx.fillStyle = cavityGrad;
+        ctx.fill();
+
+        // 4. Lower outer wing recessed shadow bays
+        ctx.fillStyle = '#052832';
+        ctx.beginPath();
+        ctx.moveTo(23, 56);
+        ctx.lineTo(20, 58);
+        ctx.lineTo(23, 67);
+        ctx.lineTo(38, 61);
+        ctx.closePath();
+        ctx.fill();
+
+        ctx.beginPath();
+        ctx.moveTo(73, 56);
+        ctx.lineTo(76, 58);
+        ctx.lineTo(73, 67);
+        ctx.lineTo(58, 61);
+        ctx.closePath();
+        ctx.fill();
+
+        // 5. Symmetrical Left & Right Origami Wing Facets (Medium-bright teal)
+        const wingFacetGrad = ctx.createLinearGradient(48, 23, 48, 61);
+        wingFacetGrad.addColorStop(0, '#1e96a4');
+        wingFacetGrad.addColorStop(1, '#14737f');
+
+        // Left inner wing triangle
+        ctx.beginPath();
+        ctx.moveTo(48, 23);
+        ctx.lineTo(23, 56);
+        ctx.lineTo(38, 61);
+        ctx.closePath();
+        ctx.fillStyle = wingFacetGrad;
+        ctx.fill();
+
+        // Right inner wing triangle
+        ctx.beginPath();
+        ctx.moveTo(48, 23);
+        ctx.lineTo(73, 56);
+        ctx.lineTo(58, 61);
+        ctx.closePath();
+        ctx.fillStyle = wingFacetGrad;
+        ctx.fill();
+
+        // 6. Mid-lower central chevron facet
+        const midChevronGrad = ctx.createLinearGradient(48, 46, 48, 66);
+        midChevronGrad.addColorStop(0, '#0b4b57');
+        midChevronGrad.addColorStop(1, '#062c35');
+
+        ctx.beginPath();
+        ctx.moveTo(40, 48);
+        ctx.lineTo(48, 57);
+        ctx.lineTo(56, 48);
+        ctx.lineTo(58, 61);
+        ctx.lineTo(48, 65);
+        ctx.lineTo(38, 61);
+        ctx.closePath();
+        ctx.fillStyle = midChevronGrad;
+        ctx.fill();
+
+        // 7. Central diamond fuselage facet with luminous cyan radial core highlight
+        const coreGrad = ctx.createRadialGradient(48, 41, 2, 48, 42, 18);
+        coreGrad.addColorStop(0, '#2cc9d7');
+        coreGrad.addColorStop(0.55, '#13717e');
+        coreGrad.addColorStop(1, '#0b4a55');
+
+        ctx.beginPath();
+        ctx.moveTo(48, 23);
+        ctx.lineTo(56, 48);
+        ctx.lineTo(48, 57);
+        ctx.lineTo(40, 48);
+        ctx.closePath();
+        ctx.fillStyle = coreGrad;
+        ctx.fill();
+
+        // 8. Luminous electric-aqua nose apex highlight
+        const noseCapGrad = ctx.createLinearGradient(48, 12, 48, 25);
+        noseCapGrad.addColorStop(0, '#6bffff');
+        noseCapGrad.addColorStop(1, '#29f0ee');
+
+        ctx.beginPath();
+        ctx.moveTo(48, 12);
+        ctx.lineTo(55, 22);
+        ctx.lineTo(48, 23);
+        ctx.lineTo(41, 22);
+        ctx.closePath();
+        ctx.fillStyle = noseCapGrad;
+        ctx.fill();
+
+        canvas.refresh();
+      }
+
+      // Scout Drone / Asteroid: Angular rocky drone with glowing core
+      generateScoutAsteroidTexture() {
+        const canvas = this.textures.createCanvas('enemy_scout', 44, 44);
+        const ctx = canvas.getContext();
+
+        // Jagged polygon
+        ctx.beginPath();
+        ctx.moveTo(22, 4);
+        ctx.lineTo(38, 12);
+        ctx.lineTo(40, 30);
+        ctx.lineTo(26, 40);
+        ctx.lineTo(10, 36);
+        ctx.lineTo(4, 20);
+        ctx.closePath();
+
+        ctx.fillStyle = '#1e1b4b';
+        ctx.fill();
+        ctx.lineWidth = 2;
+        ctx.strokeStyle = '#f59e0b'; // Amber warning
+        ctx.stroke();
+
+        // Central sensor eye
+        ctx.beginPath();
+        ctx.arc(22, 22, 5, 0, Math.PI * 2);
+        ctx.fillStyle = '#fbbf24';
+        ctx.fill();
+
+        canvas.refresh();
+      }
+
+      // Alien Fighter: Sleek crimson swept-wing fighter
+      generateAlienFighterTexture() {
+        const canvas = this.textures.createCanvas('enemy_fighter', 54, 46);
+        const ctx = canvas.getContext();
+
+        ctx.beginPath();
+        ctx.moveTo(27, 42);  // Nose pointing down
+        ctx.lineTo(50, 8);   // Right swept wing
+        ctx.lineTo(38, 14);  // Right intake
+        ctx.lineTo(27, 10);  // Center engine
+        ctx.lineTo(16, 14);  // Left intake
+        ctx.lineTo(4, 8);    // Left swept wing
+        ctx.closePath();
+
+        ctx.fillStyle = '#2e1065';
+        ctx.fill();
+        ctx.lineWidth = 2;
+        ctx.strokeStyle = '#e11d48'; // Crimson
+        ctx.stroke();
+
+        // Glowing wingtip sensors
+        ctx.fillStyle = '#fb7185';
+        ctx.fillRect(5, 7, 3, 3);
+        ctx.fillRect(46, 7, 3, 3);
+
+        canvas.refresh();
+      }
+
+      // Dreadnought: Armored heavy cruiser chassis
+      generateDreadnoughtTexture() {
+        const canvas = this.textures.createCanvas('enemy_cruiser', 76, 64);
+        const ctx = canvas.getContext();
+
+        ctx.beginPath();
+        ctx.moveTo(38, 60);  // Nose down
+        ctx.lineTo(52, 44);
+        ctx.lineTo(72, 34);  // Heavy wing
+        ctx.lineTo(66, 10);  // Rear wingtip
+        ctx.lineTo(46, 16);
+        ctx.lineTo(38, 8);   // Central engine
+        ctx.lineTo(30, 16);
+        ctx.lineTo(10, 10);
+        ctx.lineTo(4, 34);
+        ctx.lineTo(24, 44);
+        ctx.closePath();
+
+        ctx.fillStyle = '#090d16';
+        ctx.fill();
+        ctx.lineWidth = 2.5;
+        ctx.strokeStyle = '#a855f7'; // Royal Purple
+        ctx.stroke();
+
+        // Reactor cores
+        ctx.fillStyle = '#c084fc';
+        ctx.beginPath();
+        ctx.arc(38, 30, 8, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.strokeStyle = '#ffffff';
+        ctx.lineWidth = 1.5;
+        ctx.stroke();
+
+        canvas.refresh();
+      }
+
+      // Authentic ZType Tracer Bolt (Needle-shaped luminous comet matching screenshot)
+      generateLaserTexture() {
+        const canvas = this.textures.createCanvas('laser_bolt', 10, 38);
+        const ctx = canvas.getContext();
+
+        // Outer soft glowing cyan-white aura
+        const glowGrad = ctx.createLinearGradient(5, 0, 5, 38);
+        glowGrad.addColorStop(0, 'rgba(255, 255, 255, 0.95)');
+        glowGrad.addColorStop(0.2, 'rgba(167, 243, 208, 0.7)');
+        glowGrad.addColorStop(0.65, 'rgba(0, 240, 255, 0.35)');
+        glowGrad.addColorStop(1, 'rgba(0, 240, 255, 0)');
+
+        ctx.fillStyle = glowGrad;
+        ctx.beginPath();
+        ctx.moveTo(5, 0);
+        ctx.lineTo(9, 36);
+        ctx.lineTo(1, 36);
+        ctx.closePath();
+        ctx.fill();
+
+        // Intense pure white core needle
+        const coreGrad = ctx.createLinearGradient(5, 0, 5, 34);
+        coreGrad.addColorStop(0, '#ffffff');
+        coreGrad.addColorStop(0.35, '#ffffff');
+        coreGrad.addColorStop(0.75, 'rgba(255, 255, 255, 0.8)');
+        coreGrad.addColorStop(1, 'rgba(255, 255, 255, 0)');
+
+        ctx.fillStyle = coreGrad;
+        ctx.beginPath();
+        ctx.moveTo(5, 0);
+        ctx.lineTo(7, 28);
+        ctx.lineTo(3, 28);
+        ctx.closePath();
+        ctx.fill();
+
+        // Bright rounded head cap
+        ctx.beginPath();
+        ctx.arc(5, 3, 2.5, 0, Math.PI * 2);
+        ctx.fillStyle = '#ffffff';
+        ctx.fill();
+
+        canvas.refresh();
+      }
+
+      // Glowing spark particle
+      generateSparkTexture() {
+        const canvas = this.textures.createCanvas('spark', 8, 8);
+        const ctx = canvas.getContext();
+
+        ctx.beginPath();
+        ctx.arc(4, 4, 3.5, 0, Math.PI * 2);
+        ctx.fillStyle = '#ffffff';
+        ctx.fill();
+
+        canvas.refresh();
+      }
+
+      // Targeting reticle box with corner brackets (sized to frame active letter/word)
+      generateReticleTexture() {
+        const canvas = this.textures.createCanvas('reticle', 44, 44);
+        const ctx = canvas.getContext();
+
+        ctx.strokeStyle = '#00f0ff';
+        ctx.lineWidth = 2.5;
+
+        const size = 9;
+        // Top-left
+        ctx.beginPath();
+        ctx.moveTo(3, 3 + size);
+        ctx.lineTo(3, 3);
+        ctx.lineTo(3 + size, 3);
+        ctx.stroke();
+
+        // Top-right
+        ctx.beginPath();
+        ctx.moveTo(41 - size, 3);
+        ctx.lineTo(41, 3);
+        ctx.lineTo(41, 3 + size);
+        ctx.stroke();
+
+        // Bottom-left
+        ctx.beginPath();
+        ctx.moveTo(3, 41 - size);
+        ctx.lineTo(3, 41);
+        ctx.lineTo(3 + size, 41);
+        ctx.stroke();
+
+        // Bottom-right
+        ctx.beginPath();
+        ctx.moveTo(41 - size, 41);
+        ctx.lineTo(41, 41);
+        ctx.lineTo(41, 41 - size);
+        ctx.stroke();
+
+        canvas.refresh();
+      }
+
+      // ZType Single-Letter Homing Mine: Glowing explosive plasma orb
+      generateMineTexture() {
+        const canvas = this.textures.createCanvas('enemy_mine', 40, 40);
+        const ctx = canvas.getContext();
+
+        // Outer radial energy aura
+        const grad = ctx.createRadialGradient(20, 20, 3, 20, 20, 19);
+        grad.addColorStop(0, '#fef08a');
+        grad.addColorStop(0.35, '#fb923c');
+        grad.addColorStop(0.75, '#f43f5e');
+        grad.addColorStop(1, 'rgba(244, 63, 94, 0)');
+
+        ctx.fillStyle = grad;
+        ctx.beginPath();
+        ctx.arc(20, 20, 19, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Mechanical border ring
+        ctx.strokeStyle = '#f43f5e';
+        ctx.lineWidth = 1.8;
+        ctx.beginPath();
+        ctx.arc(20, 20, 14, 0, Math.PI * 2);
+        ctx.stroke();
+
+        // Sensor crosshair dots
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(19, 3, 2, 4);
+        ctx.fillRect(19, 33, 2, 4);
+        ctx.fillRect(3, 19, 4, 2);
+        ctx.fillRect(33, 19, 4, 2);
+
+        canvas.refresh();
+      }
+
+      // Authentic ZType Orange Target Drone (circular orange reticle with notches & center dot)
+      generateTargetDroneTexture() {
+        const canvas = this.textures.createCanvas('target_drone', 26, 26);
+        const ctx = canvas.getContext();
+
+        // Outer orange circular ring
+        ctx.strokeStyle = '#ff9900';
+        ctx.lineWidth = 2.2;
+        ctx.beginPath();
+        ctx.arc(13, 13, 9, 0, Math.PI * 2);
+        ctx.stroke();
+
+        // 4 notches / tick marks
+        ctx.fillStyle = '#ffaa00';
+        ctx.fillRect(12, 1, 2, 4);   // top
+        ctx.fillRect(12, 21, 2, 4);  // bottom
+        ctx.fillRect(1, 12, 4, 2);   // left
+        ctx.fillRect(21, 12, 4, 2);  // right
+
+        // Central glowing dot
+        ctx.beginPath();
+        ctx.arc(13, 13, 2.5, 0, Math.PI * 2);
+        ctx.fillStyle = '#ffcc00';
+        ctx.fill();
+
+        canvas.refresh();
+      }
+
+      // Authentic ZType Golden-Yellow EMP Hexagon
+      generateEMPHexagonTexture() {
+        const canvas = this.textures.createCanvas('emp_hexagon', 44, 48);
+        const ctx = canvas.getContext();
+
+        const r = 20;
+        const cx = 22, cy = 24;
+        ctx.beginPath();
+        for (let i = 0; i < 6; i++) {
+          const angle = (Math.PI / 3) * i - Math.PI / 6;
+          const x = cx + r * Math.cos(angle);
+          const y = cy + r * Math.sin(angle);
+          if (i === 0) ctx.moveTo(x, y);
+          else ctx.lineTo(x, y);
+        }
+        ctx.closePath();
+        ctx.fillStyle = '#eab308'; // Golden amber
+        ctx.fill();
+        ctx.lineWidth = 2;
+        ctx.strokeStyle = '#facc15';
+        ctx.stroke();
+
+        canvas.refresh();
+      }
+    }
+
+    // --------------------------------------------------------------------------
+    // 4. SCENE 2: MENU & START SCREEN
+    // --------------------------------------------------------------------------
+    class MenuScene extends Phaser.Scene {
+      constructor() {
+        super({ key: 'MenuScene' });
+      }
+
+      create() {
+        const { width, height } = this.scale;
+
+        // Interactive audio enabler
+        this.input.on('pointerdown', () => sound.init());
+        this.input.keyboard.on('keydown', () => sound.init());
+
+        // Universe background with neutral dark vignette
+        if (this.textures.exists('game_bg')) {
+          const bgImg = this.add.image(width / 2, height / 2, 'game_bg').setOrigin(0.5).setDepth(0);
+          const scale = Math.max(width / bgImg.width, height / bgImg.height);
+          bgImg.setScale(scale);
+
+          const overlay = this.add.graphics().setDepth(1);
+          overlay.fillStyle(0x050608, 0.32);
+          overlay.fillRect(0, 0, width, height);
+        }
+
+        // Subtle interactive tactical space grid
+        const gridGfx = this.add.graphics().setDepth(1);
+        gridGfx.lineStyle(1, 0xffffff, 0.03);
+        for (let x = 0; x < width; x += 38) {
+          gridGfx.lineBetween(x, 0, x, height);
+        }
+        for (let y = 0; y < height; y += 38) {
+          gridGfx.lineBetween(0, y, width, y);
+        }
+
+        this.stars = [];
+        const starColors = [0xffffff, 0xffeebb, 0xfef08a, 0xa7f3d0];
+        for (let i = 0; i < 55; i++) {
+          const x = Phaser.Math.Between(0, width);
+          const y = Phaser.Math.Between(0, height);
+          const size = Phaser.Math.FloatBetween(0.8, 2.0);
+          const speed = size * 0.4;
+          const col = starColors[i % starColors.length];
+          const star = this.add.circle(x, y, size, col, Phaser.Math.FloatBetween(0.25, 0.75)).setDepth(2);
+          this.stars.push({ obj: star, speed, baseX: x });
+        }
+
+        // 1. Author / Studio header
+        this.add.text(width / 2, 85, 'dushi_dev', {
+          fontFamily: FONT_MONO,
+          fontSize: '15px',
+          fontWeight: '400',
+          color: '#a1a1aa',
+          letterSpacing: 6
+        }).setOrigin(0.5);
+
+        // 2. "Ashoter" in Stationary 3D Extruded Perspective View (Single high-performance texture)
+        const titleTexKey = 'ashoter_3d_title';
+        if (!this.textures.exists(titleTexKey)) {
+          const texW = 460;
+          const texH = 120;
+          const titleCanvas = this.textures.createCanvas(titleTexKey, texW, texH);
+          const tCtx = titleCanvas.getContext();
+          tCtx.clearRect(0, 0, texW, texH);
+          tCtx.font = '900 64px "JetBrains Mono", "Roboto Mono", monospace';
+          tCtx.textAlign = 'center';
+          tCtx.textBaseline = 'middle';
+
+          const cx = texW / 2;
+          const cy = 52;
+
+          // Deep 3D drop shadow
+          tCtx.fillStyle = 'rgba(0, 0, 0, 0.72)';
+          tCtx.fillText('Ashoter', cx + 7, cy + 14);
+
+          // 3D isometric extrusion stack (back-to-front metallic bevel)
+          const extrusionPalette = [
+            '#09191f', '#0d252e', '#11323d', '#16404e', '#1b4e5f',
+            '#205e72', '#267086', '#2d849c', '#369ab4', '#48b5d0'
+          ];
+          const totalLayers = extrusionPalette.length;
+          tCtx.lineJoin = 'round';
+          for (let i = totalLayers; i >= 1; i--) {
+            const lx = cx - i * 0.75;
+            const ly = cy + i * 1.25;
+            tCtx.strokeStyle = '#03070b';
+            tCtx.lineWidth = 3;
+            tCtx.strokeText('Ashoter', lx, ly);
+            tCtx.fillStyle = extrusionPalette[totalLayers - i];
+            tCtx.fillText('Ashoter', lx, ly);
+          }
+
+          // Top 3D specular rim highlight
+          tCtx.fillStyle = '#67e8f9';
+          tCtx.fillText('Ashoter', cx, cy - 1.5);
+
+          // Front 3D face
+          tCtx.strokeStyle = '#0f2933';
+          tCtx.lineWidth = 3;
+          tCtx.strokeText('Ashoter', cx, cy);
+          tCtx.fillStyle = '#ffffff';
+          tCtx.fillText('Ashoter', cx, cy);
+
+          titleCanvas.refresh();
+        }
+
+        this.titleFront = this.add.image(width / 2, 148, titleTexKey).setOrigin(0.5).setDepth(6);
+
+        // 3. Official Game Logo & Interactive Player Ship with twin exhaust beams
+        const shipY = 262;
+        this.shipBaseX = width / 2;
+        this.shipBaseY = shipY;
+        this.ship = this.add.image(width / 2, shipY, 'player_ship')
+          .setScale(0.92)
+          .setDepth(6)
+          .setInteractive({ useHandCursor: true });
+
+        // Twin vertical engine exhaust beams pointing downward through the menu
+        this.exhaustGfx = this.add.graphics().setDepth(2);
+        this.drawMenuExhaust(width / 2, shipY);
+
+        this.tweens.add({
+          targets: this.ship,
+          y: shipY - 6,
+          duration: 1800,
+          yoyo: true,
+          repeat: -1,
+          ease: 'Sine.easeInOut'
+        });
+
+        // Interactive ship click: fires a laser bolt upward with sound & recoil
+        this.ship.on('pointerdown', () => {
+          sound.init();
+          sound.laser();
+          const bolt = this.add.image(this.ship.x, this.ship.y - 28, 'laser_bolt').setDepth(5);
+          this.tweens.add({
+            targets: bolt,
+            y: -40,
+            duration: 260,
+            ease: 'Quad.easeIn',
+            onComplete: () => bolt.destroy()
+          });
+          this.tweens.add({
+            targets: this.ship,
+            scale: 1.02,
+            duration: 80,
+            yoyo: true
+          });
+        });
+
+        // Interactive pointer movement: subtle horizontal ship tracking, 3D title tilt & starfield parallax
+        this.pointerOffsetX = 0;
+        this.input.on('pointermove', (pointer) => {
+          if (this.isSettingsOpen) return;
+          const normX = (pointer.x - width / 2) / (width / 2);
+          const normY = (pointer.y - height / 2) / (height / 2);
+          this.pointerOffsetX = normX * 18;
+          this.pointerOffsetY = normY * 12;
+        });
+
+        // 4. Start Game transition
+        const startGame = () => {
+          activeWordPackKey = 'standard';
+          sound.init();
+          sound.lock();
+          this.cameras.main.fade(300, 7, 8, 11, false, (cam, progress) => {
+            if (progress === 1) {
+              this.scene.start('GameScene');
+            }
+          });
+        };
+
+        // 5. Menu Items (Interactive warm orange / emerald / crisp white palette — no heavy blue)
+        const menuStartY = 380;
+        const lineSpacing = 54;
+
+        // Helper for interactive bracket hover feedback
+        const makeInteractiveMenuBtn = (y, label, fontSize, defaultColor, hoverColor, onClick) => {
+          const btn = this.add.text(width / 2, y, label, {
+            fontFamily: FONT_MONO,
+            fontSize: fontSize,
+            fontWeight: label === 'new game' ? '900' : 'bold',
+            color: defaultColor,
+            letterSpacing: 2,
+            stroke: '#000000',
+            strokeThickness: label === 'new game' ? 4 : 3,
+            shadow: { offsetX: 0, offsetY: 2, color: '#000000', blur: 4, fill: true }
+          }).setOrigin(0.5).setDepth(10).setInteractive({ useHandCursor: true });
+
+          btn.on('pointerover', () => {
+            sound.init();
+            btn.setText(`› ${label} ‹`);
+            btn.setColor(hoverColor);
+            btn.setScale(1.07);
+          });
+          btn.on('pointerout', () => {
+            btn.setText(label);
+            btn.setColor(defaultColor);
+            btn.setScale(1.0);
+          });
+          btn.on('pointerdown', onClick);
+          return btn;
+        };
+
+        // 1. "new game" in vibrant bold orange
+        makeInteractiveMenuBtn(menuStartY, 'new game', '28px', '#ff8800', '#ffaa33', startGame);
+
+        // 2. "settings" in crisp light silver with vibrant orange hover
+        makeInteractiveMenuBtn(menuStartY + lineSpacing, 'settings', '22px', '#e4e4e7', '#ff8800', () => {
+          sound.init();
+          sound.lock();
+          this.openSettingsOverlay();
+        });
+
+        // 3. "my stats" in crisp light silver with warm golden-amber hover
+        makeInteractiveMenuBtn(menuStartY + lineSpacing * 2, 'my stats', '22px', '#d4d4d8', '#fbbf24', () => {
+          sound.init();
+          sound.lock();
+          const hs = parseInt(localStorage.getItem('ashooter_highscore') || '0', 10);
+          if (this.statsToast) this.statsToast.destroy();
+          this.statsToast = this.add.text(width / 2, menuStartY + lineSpacing * 3 + 52, `HIGH SCORE: ${hs.toLocaleString()} PTS`, {
+            fontFamily: FONT_MONO,
+            fontSize: '14px',
+            fontWeight: 'bold',
+            color: '#fbbf24',
+            stroke: '#000000',
+            strokeThickness: 3
+          }).setOrigin(0.5).setDepth(20);
+          this.time.delayedCall(1800, () => {
+            if (this.statsToast) {
+              this.statsToast.destroy();
+              this.statsToast = null;
+            }
+          });
+        });
+
+        // 4. "load your own text" in crisp white with emerald hover
+        makeInteractiveMenuBtn(menuStartY + lineSpacing * 3, 'load your own text', '20px', '#a1a1aa', '#34d399', () => {
+          sound.init();
+          sound.lock();
+          this.openCustomTextPrompt();
+        });
+
+        let isNavigatingToCredits = false;
+        const goToCredits = () => {
+          if (isNavigatingToCredits) return;
+          isNavigatingToCredits = true;
+          try {
+            sound.init();
+            sound.lock();
+          } catch (e) {}
+          this.cameras.main.fadeOut(220, 7, 8, 11);
+          this.cameras.main.once('camerafadeoutcomplete', () => {
+            this.scene.start('CreditsScene', { returnTo: 'MenuScene' });
+          });
+        };
+
+        // 7. Clickable Info (i) Icon at bottom right (Warm amber/emerald interactive styling)
+        const infoBtn = this.add.container(width - 24, height - 28).setDepth(15);
+        const infoCircle = this.add.circle(0, 0, 14, 0x090a0f, 0.92);
+        infoCircle.setStrokeStyle(1.8, 0xa1a1aa);
+        const infoText = this.add.text(0, 0, 'i', {
+          fontFamily: FontManager.getFontFamily(),
+          fontSize: '14px',
+          fontWeight: '900',
+          color: '#e4e4e7',
+          stroke: '#000000',
+          strokeThickness: 2
+        }).setOrigin(0.5);
+
+        infoBtn.add([infoCircle, infoText]);
+        infoBtn.setSize(32, 32);
+        infoBtn.setInteractive({ useHandCursor: true });
+
+        infoBtn.on('pointerover', () => {
+          infoCircle.setStrokeStyle(2.2, 0xff8800);
+          infoCircle.setFillStyle(0x1c1917, 0.95);
+          infoText.setColor('#ff8800');
+          infoBtn.setScale(1.12);
+        });
+        infoBtn.on('pointerout', () => {
+          infoCircle.setStrokeStyle(1.8, 0xa1a1aa);
+          infoCircle.setFillStyle(0x090a0f, 0.92);
+          infoText.setColor('#e4e4e7');
+          infoBtn.setScale(1.0);
+        });
+        infoBtn.on('pointerdown', goToCredits);
+
+        // Keyboard Enter or Space to start immediately (unless Settings overlay is open)
+        this.isSettingsOpen = false;
+        this.input.keyboard.on('keydown', (event) => {
+          if (this.isSettingsOpen) {
+            if (event.key === 'Escape') {
+              this.closeSettingsOverlay();
+            }
+            return;
+          }
+          if (event.key === 'Enter' || event.key === ' ') {
+            startGame();
+          }
+        });
+      }
+
+      openSettingsOverlay() {
+        if (this.isSettingsOpen) return;
+        this.isSettingsOpen = true;
+
+        const { width, height } = this.scale;
+        this.settingsContainer = this.add.container(0, 0).setDepth(50);
+
+        // 1. Dark semi-transparent canvas backdrop blocking click-through
+        const backdrop = this.add.rectangle(width / 2, height / 2, width, height, 0x030611, 0.94)
+          .setInteractive();
+        this.settingsContainer.add(backdrop);
+
+        // 2. Title: SETTINGS
+        const title = this.add.text(width / 2, 110, 'SETTINGS', {
+          fontFamily: FONT_MONO,
+          fontSize: '32px',
+          fontWeight: 'bold',
+          color: '#c4d1db',
+          letterSpacing: 3
+        }).setOrigin(0.5);
+        this.settingsContainer.add(title);
+
+        // 3. SOUND Volume Section
+        const soundHeader = this.add.text(width / 2, 200, 'SOUND', {
+          fontFamily: FONT_MONO,
+          fontSize: '14px',
+          color: '#657788',
+          letterSpacing: 2
+        }).setOrigin(0.5);
+        this.settingsContainer.add(soundHeader);
+
+        const soundValText = this.add.text(width / 2, 240, `${Math.round(sound.soundVolume * 100)}%`, {
+          fontFamily: FONT_MONO,
+          fontSize: '26px',
+          fontWeight: 'bold',
+          color: '#ff7700'
+        }).setOrigin(0.5);
+        this.settingsContainer.add(soundValText);
+
+        const soundMinus = this.add.text(width / 2 - 90, 240, '—', {
+          fontFamily: FONT_MONO,
+          fontSize: '26px',
+          color: '#cbd5e1'
+        }).setOrigin(0.5).setInteractive({ useHandCursor: true });
+        this.settingsContainer.add(soundMinus);
+
+        soundMinus.on('pointerover', () => soundMinus.setColor('#ffffff'));
+        soundMinus.on('pointerout', () => soundMinus.setColor('#cbd5e1'));
+        soundMinus.on('pointerdown', () => {
+          sound.init();
+          sound.setSoundVolume(sound.soundVolume - 0.1);
+          soundValText.setText(`${Math.round(sound.soundVolume * 100)}%`);
+          sound.hit();
+        });
+
+        const soundPlus = this.add.text(width / 2 + 90, 240, '+', {
+          fontFamily: FONT_MONO,
+          fontSize: '26px',
+          color: '#cbd5e1'
+        }).setOrigin(0.5).setInteractive({ useHandCursor: true });
+        this.settingsContainer.add(soundPlus);
+
+        soundPlus.on('pointerover', () => soundPlus.setColor('#ffffff'));
+        soundPlus.on('pointerout', () => soundPlus.setColor('#cbd5e1'));
+        soundPlus.on('pointerdown', () => {
+          sound.init();
+          sound.setSoundVolume(sound.soundVolume + 0.1);
+          soundValText.setText(`${Math.round(sound.soundVolume * 100)}%`);
+          sound.hit();
+        });
+
+        // 4. MUSIC Volume Section
+        const musicHeader = this.add.text(width / 2, 315, 'MUSIC', {
+          fontFamily: FONT_MONO,
+          fontSize: '14px',
+          color: '#657788',
+          letterSpacing: 2
+        }).setOrigin(0.5);
+        this.settingsContainer.add(musicHeader);
+
+        const musicValText = this.add.text(width / 2, 355, `${Math.round(sound.musicVolume * 100)}%`, {
+          fontFamily: FONT_MONO,
+          fontSize: '26px',
+          fontWeight: 'bold',
+          color: '#ffffff'
+        }).setOrigin(0.5);
+        this.settingsContainer.add(musicValText);
+
+        const musicMinus = this.add.text(width / 2 - 90, 355, '—', {
+          fontFamily: FONT_MONO,
+          fontSize: '26px',
+          color: '#cbd5e1'
+        }).setOrigin(0.5).setInteractive({ useHandCursor: true });
+        this.settingsContainer.add(musicMinus);
+
+        musicMinus.on('pointerover', () => musicMinus.setColor('#ffffff'));
+        musicMinus.on('pointerout', () => musicMinus.setColor('#cbd5e1'));
+        musicMinus.on('pointerdown', () => {
+          sound.init();
+          sound.setMusicVolume(sound.musicVolume - 0.1);
+          musicValText.setText(`${Math.round(sound.musicVolume * 100)}%`);
+        });
+
+        const musicPlus = this.add.text(width / 2 + 90, 355, '+', {
+          fontFamily: FONT_MONO,
+          fontSize: '26px',
+          color: '#cbd5e1'
+        }).setOrigin(0.5).setInteractive({ useHandCursor: true });
+        this.settingsContainer.add(musicPlus);
+
+        musicPlus.on('pointerover', () => musicPlus.setColor('#ffffff'));
+        musicPlus.on('pointerout', () => musicPlus.setColor('#cbd5e1'));
+        musicPlus.on('pointerdown', () => {
+          sound.init();
+          sound.setMusicVolume(sound.musicVolume + 0.1);
+          musicValText.setText(`${Math.round(sound.musicVolume * 100)}%`);
+        });
+
+        // 5. WORD FONT SIZE Section
+        const fontHeader = this.add.text(width / 2, 430, 'WORD SIZE', {
+          fontFamily: FONT_MONO,
+          fontSize: '14px',
+          color: '#657788',
+          letterSpacing: 2
+        }).setOrigin(0.5);
+        this.settingsContainer.add(fontHeader);
+
+        const fontValText = this.add.text(width / 2, 470, FontManager.getSizeDisplayName(), {
+          fontFamily: FONT_MONO,
+          fontSize: '20px',
+          fontWeight: 'bold',
+          color: '#38bdf8'
+        }).setOrigin(0.5).setInteractive({ useHandCursor: true });
+        this.settingsContainer.add(fontValText);
+
+        const cycleFontSize = () => {
+          sound.init();
+          FontManager.toggleSize();
+          fontValText.setText(FontManager.getSizeDisplayName());
+          sound.lock();
+        };
+
+        const fontPrev = this.add.text(width / 2 - 140, 470, '‹', {
+          fontFamily: FONT_MONO,
+          fontSize: '28px',
+          color: '#cbd5e1'
+        }).setOrigin(0.5).setInteractive({ useHandCursor: true });
+        this.settingsContainer.add(fontPrev);
+
+        fontPrev.on('pointerover', () => fontPrev.setColor('#ffffff'));
+        fontPrev.on('pointerout', () => fontPrev.setColor('#cbd5e1'));
+        fontPrev.on('pointerdown', cycleFontSize);
+
+        const fontNext = this.add.text(width / 2 + 140, 470, '›', {
+          fontFamily: FONT_MONO,
+          fontSize: '28px',
+          color: '#cbd5e1'
+        }).setOrigin(0.5).setInteractive({ useHandCursor: true });
+        this.settingsContainer.add(fontNext);
+
+        fontNext.on('pointerover', () => fontNext.setColor('#ffffff'));
+        fontNext.on('pointerout', () => fontNext.setColor('#cbd5e1'));
+        fontNext.on('pointerdown', cycleFontSize);
+        fontValText.on('pointerdown', cycleFontSize);
+
+        // Teal separator line
+        const tealLine = this.add.graphics();
+        tealLine.lineStyle(2, 0x0f6e66, 0.95);
+        tealLine.lineBetween(width / 2 - 170, 535, width / 2 + 170, 535);
+        this.settingsContainer.add(tealLine);
+
+        // 6. Back to Title button
+        const backBtn = this.add.text(width / 2, 600, 'back to title', {
+          fontFamily: FONT_MONO,
+          fontSize: '26px',
+          color: '#ff8800',
+          fontWeight: 'bold'
+        }).setOrigin(0.5).setInteractive({ useHandCursor: true });
+        this.settingsContainer.add(backBtn);
+
+        backBtn.on('pointerover', () => {
+          backBtn.setColor('#ffa500');
+          backBtn.setScale(1.05);
+        });
+        backBtn.on('pointerout', () => {
+          backBtn.setColor('#ff8800');
+          backBtn.setScale(1.0);
+        });
+        backBtn.on('pointerdown', () => {
+          sound.lock();
+          this.closeSettingsOverlay();
+        });
+      }
+
+      closeSettingsOverlay() {
+        if (this.settingsContainer) {
+          this.settingsContainer.destroy();
+          this.settingsContainer = null;
+        }
+        this.isSettingsOpen = false;
+      }
+
+      openCustomTextPrompt() {
+        // Disable Phaser's keyboard while typing in the text box
+        if (this.input && this.input.keyboard) {
+          this.input.keyboard.enabled = false;
+        }
+
+        // Clean up any existing modal
+        const existing = document.getElementById('custom-words-modal');
+        if (existing) existing.remove();
+
+        const modalOverlay = document.createElement('div');
+        modalOverlay.id = 'custom-words-modal';
+        modalOverlay.style.cssText = `
+          position: fixed;
+          inset: 0;
+          background: rgba(2, 6, 18, 0.88);
+          backdrop-filter: blur(10px);
+          -webkit-backdrop-filter: blur(10px);
+          z-index: 99999;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          padding: 16px;
+        `;
+
+        modalOverlay.innerHTML = `
+          <div id="modal-card" style="
+            background: linear-gradient(180deg, #091329 0%, #050b18 100%);
+            border: 2px solid #00f0ff;
+            box-shadow: 0 0 45px rgba(0, 240, 255, 0.3), 0 25px 50px rgba(0, 0, 0, 0.9);
+            border-radius: 12px;
+            max-width: 600px;
+            width: 100%;
+            padding: 24px;
+            position: relative;
+            color: #f8fafc;
+            font-family: 'JetBrains Mono', 'Roboto Mono', monospace;
+            box-sizing: border-box;
+          ">
+            <!-- Header -->
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
+              <div style="display: flex; align-items: center; gap: 10px;">
+                <span style="display: inline-block; width: 10px; height: 10px; background: #00f0ff; border-radius: 50%; box-shadow: 0 0 8px #00f0ff;"></span>
+                <h2 style="font-size: 19px; font-weight: 800; letter-spacing: 2px; color: #ffffff; text-transform: uppercase; margin: 0;">LOAD YOUR OWN WORDS</h2>
+              </div>
+              <button id="close-modal-x" style="background: none; border: none; color: #94a3b8; font-size: 26px; cursor: pointer; padding: 2px 8px; line-height: 1; transition: color 0.2s;">&times;</button>
+            </div>
+
+            <p style="font-size: 13px; color: #94a3b8; margin: 0 0 14px 0; line-height: 1.5;">
+              Type or paste words below. Every enemy ship in your game will carry your custom words!
+            </p>
+
+            <!-- Quick Samples Bar -->
+            <div style="display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; align-items: center;">
+              <span style="font-size: 11px; color: #64748b; font-weight: 700; letter-spacing: 1px;">QUICK SAMPLES:</span>
+              <button type="button" class="preset-sample-btn" data-type="space" style="background: rgba(0, 240, 255, 0.08); border: 1px solid rgba(0, 240, 255, 0.35); color: #38bdf8; font-family: inherit; font-size: 11px; font-weight: 600; padding: 4px 10px; border-radius: 4px; cursor: pointer; transition: all 0.2s;">Space</button>
+              <button type="button" class="preset-sample-btn" data-type="code" style="background: rgba(0, 240, 255, 0.08); border: 1px solid rgba(0, 240, 255, 0.35); color: #38bdf8; font-family: inherit; font-size: 11px; font-weight: 600; padding: 4px 10px; border-radius: 4px; cursor: pointer; transition: all 0.2s;">Coding</button>
+              <button type="button" class="preset-sample-btn" data-type="simple" style="background: rgba(0, 240, 255, 0.08); border: 1px solid rgba(0, 240, 255, 0.35); color: #38bdf8; font-family: inherit; font-size: 11px; font-weight: 600; padding: 4px 10px; border-radius: 4px; cursor: pointer; transition: all 0.2s;">Easy Words</button>
+              <button type="button" class="preset-sample-btn" data-type="clear" style="background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.35); color: #f87171; font-family: inherit; font-size: 11px; font-weight: 600; padding: 4px 10px; border-radius: 4px; cursor: pointer; transition: all 0.2s;">Clear</button>
+            </div>
+
+            <!-- Text Box -->
+            <textarea id="custom-words-input" placeholder="Type or paste your words here (e.g.: planet galaxy rocket velocity orbit astronaut asteroid satellite cosmic eclipse)..." style="
+              width: 100%;
+              height: 155px;
+              background: rgba(3, 8, 20, 0.95);
+              border: 1.5px solid #1e3a5f;
+              border-radius: 8px;
+              color: #00f0ff;
+              font-family: inherit;
+              font-size: 15px;
+              line-height: 1.5;
+              padding: 14px;
+              outline: none;
+              resize: vertical;
+              box-sizing: border-box;
+              box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.7);
+            "></textarea>
+
+            <!-- Counter & Alert -->
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 8px; margin-bottom: 18px; min-height: 20px;">
+              <span id="custom-words-counter" style="font-size: 12px; color: #38bdf8; font-weight: 700;">0 unique words detected</span>
+              <span id="custom-words-alert" style="font-size: 12px; color: #f87171; font-weight: 700; display: none;"></span>
+            </div>
+
+            <!-- Action Buttons -->
+            <div style="display: flex; gap: 12px; justify-content: flex-end;">
+              <button id="cancel-custom-btn" type="button" style="
+                background: rgba(255, 255, 255, 0.05);
+                border: 1px solid #334155;
+                color: #94a3b8;
+                font-family: inherit;
+                font-size: 13px;
+                font-weight: 700;
+                letter-spacing: 1px;
+                padding: 10px 18px;
+                border-radius: 6px;
+                cursor: pointer;
+                transition: all 0.2s;
+              ">CANCEL</button>
+
+              <button id="launch-custom-btn" type="button" style="
+                background: linear-gradient(135deg, #ff8800 0%, #ff5500 100%);
+                border: none;
+                color: #ffffff;
+                font-family: inherit;
+                font-size: 13px;
+                font-weight: 800;
+                letter-spacing: 1.5px;
+                padding: 10px 22px;
+                border-radius: 6px;
+                cursor: pointer;
+                box-shadow: 0 0 20px rgba(255, 119, 0, 0.4);
+                transition: all 0.2s;
+              ">START GAME</button>
+            </div>
+          </div>
+        `;
+
+        document.body.appendChild(modalOverlay);
+
+        const textarea = document.getElementById('custom-words-input');
+        const counter = document.getElementById('custom-words-counter');
+        const alertMsg = document.getElementById('custom-words-alert');
+        const closeBtn = document.getElementById('close-modal-x');
+        const cancelBtn = document.getElementById('cancel-custom-btn');
+        const launchBtn = document.getElementById('launch-custom-btn');
+        const presetBtns = modalOverlay.querySelectorAll('.preset-sample-btn');
+
+        // Focus text area
+        setTimeout(() => textarea.focus(), 50);
+
+        const closeModal = () => {
+          modalOverlay.remove();
+          if (this.input && this.input.keyboard) {
+            this.input.keyboard.enabled = true;
+          }
+        };
+
+        const updateCount = () => {
+          const text = textarea.value.trim();
+          if (!text) {
+            counter.textContent = '0 unique words detected';
+            alertMsg.style.display = 'none';
+            return 0;
+          }
+          const rawWords = text.toUpperCase().replace(/[^A-Z\s]/g, ' ').split(/\s+/);
+          const uniqueWords = Array.from(new Set(rawWords.filter(w => w.length >= 2 && w.length <= 22)));
+          counter.textContent = `${uniqueWords.length} unique word${uniqueWords.length === 1 ? '' : 's'} detected`;
+          if (uniqueWords.length > 0) {
+            alertMsg.style.display = 'none';
+          }
+          return uniqueWords.length;
+        };
+
+        textarea.addEventListener('input', updateCount);
+
+        // Preset click handlers
+        presetBtns.forEach(btn => {
+          btn.addEventListener('click', () => {
+            const type = btn.getAttribute('data-type');
+            if (type === 'space') {
+              textarea.value = 'galaxy nebula astronaut velocity orbit cosmos rocket satellite starship telemetry propulsion solar interstellar trajectory hyperdrive asteroid supernova quasar pulsar';
+            } else if (type === 'code') {
+              textarea.value = 'function variable const array object component interface promise async await import export return execute compile terminal algorithm syntax';
+            } else if (type === 'simple') {
+              textarea.value = 'cat dog sun tree moon river ocean forest mountain cloud fire water storm wind stone flower bird tiger lion';
+            } else if (type === 'clear') {
+              textarea.value = '';
+            }
+            updateCount();
+            textarea.focus();
+          });
+        });
+
+        // Close handlers
+        closeBtn.addEventListener('click', closeModal);
+        cancelBtn.addEventListener('click', closeModal);
+        modalOverlay.addEventListener('click', (e) => {
+          if (e.target === modalOverlay) closeModal();
+        });
+
+        const handleKeyDown = (e) => {
+          if (e.key === 'Escape') {
+            document.removeEventListener('keydown', handleKeyDown);
+            closeModal();
+          }
+        };
+        document.addEventListener('keydown', handleKeyDown);
+
+        // Launch game with custom words
+        launchBtn.addEventListener('click', () => {
+          const count = updateCount();
+          if (count === 0) {
+            alertMsg.textContent = 'Please enter at least 1 valid word (A-Z)!';
+            alertMsg.style.display = 'inline';
+            textarea.focus();
+            return;
+          }
+
+          const loaded = setCustomTextPack(textarea.value);
+          if (loaded > 0) {
+            document.removeEventListener('keydown', handleKeyDown);
+            closeModal();
+            sound.init();
+            sound.lock();
+            this.cameras.main.fade(300, 3, 6, 17, false, (cam, progress) => {
+              if (progress === 1) {
+                this.scene.start('GameScene');
+              }
+            });
+          } else {
+            alertMsg.textContent = 'Unable to parse words. Check input format.';
+            alertMsg.style.display = 'inline';
+          }
+        });
+      }
+
+      drawMenuExhaust(shipX, shipY) {
+        if (!this.exhaustGfx) return;
+        const { height } = this.scale;
+        this.exhaustGfx.clear();
+        this.exhaustGfx.lineStyle(1.5, 0x22d3ee, 0.38);
+        this.exhaustGfx.lineBetween(shipX - 7, shipY + 26, shipX - 7, height - 55);
+        this.exhaustGfx.lineBetween(shipX + 7, shipY + 26, shipX + 7, height - 55);
+      }
+
+      update(time, delta) {
+        const dt = delta / 1000;
+
+        if (this.ship && this.shipBaseX !== undefined) {
+          const targetX = this.shipBaseX + (this.pointerOffsetX || 0);
+          this.ship.x = Phaser.Math.Linear(this.ship.x, targetX, 0.08);
+          this.drawMenuExhaust(this.ship.x, this.ship.y);
+        }
+        for (let i = 0; i < this.stars.length; i++) {
+          const s = this.stars[i];
+          s.obj.y += s.speed * 60 * dt;
+          if (s.baseX !== undefined) {
+            s.obj.x = s.baseX - (this.pointerOffsetX || 0) * (s.speed * 0.6);
+          }
+          if (s.obj.y > this.scale.height) {
+            s.obj.y = 0;
+            s.baseX = Phaser.Math.Between(0, this.scale.width);
+            s.obj.x = s.baseX;
+          }
+        }
+      }
+
+      openEditorCredentialsModal() {
+        openEditorCredentialsModal(this);
+      }
+    }
+
+    // --------------------------------------------------------------------------
+    // 4.4 INTERACTIVE EDITOR CREDENTIALS & PLAYGROUND SPECS MODAL
+    // --------------------------------------------------------------------------
+    function openEditorCredentialsModal(scene, onSaveCallback) {
+      if (scene && scene.input && scene.input.keyboard) {
+        scene.input.keyboard.enabled = false;
+      }
+
+      const existing = document.getElementById('editor-credentials-modal');
+      if (existing) existing.remove();
+
+      const storedEditorName = localStorage.getItem('ashooter_editor_name');
+      const defaultName = (!storedEditorName || storedEditorName === 'Paul Duskon') ? 'dush_dev' : storedEditorName;
+      const defaultEmail = localStorage.getItem('ashooter_editor_email') || 'duskonpaul@gmail.com';
+      const defaultRole = localStorage.getItem('ashooter_editor_role') || 'GAME DESIGN, PROGRAMMING';
+
+      const escapeHtml = (str) => String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+
+      const modalOverlay = document.createElement('div');
+      modalOverlay.id = 'editor-credentials-modal';
+      modalOverlay.style.cssText = `
+        position: fixed;
+        inset: 0;
+        background: rgba(2, 6, 18, 0.88);
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+        z-index: 99999;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 16px;
+      `;
+
+      modalOverlay.innerHTML = `
+        <div id="credentials-card" style="
+          background: linear-gradient(180deg, #091329 0%, #050b18 100%);
+          border: 2px solid #00f0ff;
+          box-shadow: 0 0 50px rgba(0, 240, 255, 0.35), 0 25px 60px rgba(0, 0, 0, 0.95);
+          border-radius: 14px;
+          max-width: 620px;
+          width: 100%;
+          padding: 26px;
+          position: relative;
+          color: #f8fafc;
+          font-family: 'JetBrains Mono', 'Roboto Mono', monospace;
+          box-sizing: border-box;
+          max-height: 90vh;
+          overflow-y: auto;
+        ">
+          <!-- Header -->
+          <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 18px; border-bottom: 1px solid rgba(0, 240, 255, 0.2); padding-bottom: 14px;">
+            <div style="display: flex; align-items: center; gap: 12px;">
+              <span style="display: inline-block; width: 12px; height: 12px; background: #00f0ff; border-radius: 50%; box-shadow: 0 0 10px #00f0ff;"></span>
+              <h2 style="font-size: 19px; font-weight: 800; letter-spacing: 2px; color: #ffffff; text-transform: uppercase; margin: 0;">EDITOR CREDENTIALS & SPECS</h2>
+            </div>
+            <button id="close-credentials-x" style="background: none; border: none; color: #94a3b8; font-size: 26px; cursor: pointer; padding: 2px 8px; line-height: 1; transition: color 0.2s;">&times;</button>
+          </div>
+
+          <!-- Credentials Card Content -->
+          <div style="display: flex; flex-direction: column; gap: 16px;">
+            <!-- Editor Bio Section -->
+            <div style="background: rgba(0, 240, 255, 0.06); border: 1.5px solid rgba(0, 240, 255, 0.35); border-radius: 8px; padding: 18px;">
+              <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
+                <span style="font-size: 13px; font-weight: 800; color: #38bdf8; letter-spacing: 1.5px; text-transform: uppercase;">VERIFIED EDITOR CREDENTIALS</span>
+                <span style="background: rgba(16, 185, 129, 0.25); border: 1px solid #10b981; color: #34d399; font-size: 11px; font-weight: 800; padding: 3px 10px; border-radius: 12px; letter-spacing: 1px;">ACTIVE</span>
+              </div>
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px; font-size: 14px;">
+                <div>
+                  <div style="color: #94a3b8; font-size: 12px; font-weight: 700; margin-bottom: 4px;">EDITOR / ARCHITECT</div>
+                  <div id="disp-editor-name" style="color: #ffffff; font-weight: 800; font-size: 17px;">${escapeHtml(defaultName)}</div>
+                </div>
+                <div>
+                  <div style="color: #94a3b8; font-size: 12px; font-weight: 700; margin-bottom: 4px;">CREDENTIAL EMAIL</div>
+                  <div id="disp-editor-email" style="color: #38bdf8; font-weight: 800; font-size: 15px;">${escapeHtml(defaultEmail)}</div>
+                </div>
+                <div style="grid-column: span 2;">
+                  <div style="color: #94a3b8; font-size: 12px; font-weight: 700; margin-bottom: 4px;">DESIGNATION / ROLE</div>
+                  <div id="disp-editor-role" style="color: #3ce9c2; font-weight: 700; font-size: 15px;">${escapeHtml(defaultRole)}</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Interactive Edit Credentials Form Toggle -->
+            <div>
+              <button type="button" id="toggle-edit-form-btn" style="background: rgba(0, 240, 255, 0.12); border: 1px solid #00f0ff; color: #00f0ff; font-family: inherit; font-size: 13px; font-weight: 700; padding: 9px 16px; border-radius: 6px; cursor: pointer; display: flex; align-items: center; gap: 8px; transition: all 0.2s;">
+                ✏️ EDIT / UPDATE CREDENTIALS
+              </button>
+            </div>
+
+            <div id="editor-edit-form" style="display: none; background: rgba(0, 0, 0, 0.55); border: 1.5px solid rgba(0, 240, 255, 0.4); border-radius: 8px; padding: 16px;">
+              <div style="display: flex; flex-direction: column; gap: 12px;">
+                <div>
+                  <label style="display: block; font-size: 12px; font-weight: 700; color: #cbd5e1; margin-bottom: 4px;">Editor Full Name</label>
+                  <input type="text" id="input-editor-name" value="${escapeHtml(defaultName)}" style="width: 100%; box-sizing: border-box; background: #030816; border: 1.5px solid #334155; color: #ffffff; font-family: inherit; font-size: 14px; font-weight: 600; padding: 8px 12px; border-radius: 6px; outline: none;" />
+                </div>
+                <div>
+                  <label style="display: block; font-size: 12px; font-weight: 700; color: #cbd5e1; margin-bottom: 4px;">Editor Contact / Email</label>
+                  <input type="email" id="input-editor-email" value="${escapeHtml(defaultEmail)}" style="width: 100%; box-sizing: border-box; background: #030816; border: 1.5px solid #334155; color: #ffffff; font-family: inherit; font-size: 14px; font-weight: 600; padding: 8px 12px; border-radius: 6px; outline: none;" />
+                </div>
+                <div>
+                  <label style="display: block; font-size: 12px; font-weight: 700; color: #cbd5e1; margin-bottom: 4px;">Designation / Title</label>
+                  <input type="text" id="input-editor-role" value="${escapeHtml(defaultRole)}" style="width: 100%; box-sizing: border-box; background: #030816; border: 1.5px solid #334155; color: #ffffff; font-family: inherit; font-size: 14px; font-weight: 600; padding: 8px 12px; border-radius: 6px; outline: none;" />
+                </div>
+                <div style="display: flex; align-items: center; justify-content: space-between; margin-top: 6px;">
+                  <span id="save-status-msg" style="display: none; color: #34d399; font-size: 12px; font-weight: 800;">✓ Credentials updated & saved!</span>
+                  <button type="button" id="save-credentials-btn" style="background: linear-gradient(135deg, #00f0ff 0%, #0284c7 100%); border: none; color: #020617; font-family: inherit; font-size: 13px; font-weight: 800; padding: 8px 20px; border-radius: 4px; cursor: pointer;">SAVE CREDENTIALS</button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Footer Origin & Engine -->
+            <div style="display: flex; align-items: center; justify-content: space-between; font-size: 12px; font-weight: 600; color: #94a3b8; padding-top: 8px; border-top: 1px solid rgba(255, 255, 255, 0.12);">
+              <div>Engine: Phaser 3 + Web Audio Synth</div>
+              <div>Original Concept & Engine: Dushi</div>
+            </div>
+          </div>
+
+          <!-- Footer Action -->
+          <div style="margin-top: 18px; display: flex; justify-content: flex-end;">
+            <button id="close-credentials-btn" style="background: rgba(255, 255, 255, 0.08); border: 1px solid rgba(255, 255, 255, 0.2); color: #ffffff; font-family: inherit; font-size: 12px; font-weight: 700; padding: 7px 18px; border-radius: 6px; cursor: pointer; letter-spacing: 1px;">CLOSE</button>
+          </div>
+        </div>
+      `;
+
+      document.body.appendChild(modalOverlay);
+
+      const closeModal = () => {
+        modalOverlay.remove();
+        if (scene && scene.input && scene.input.keyboard) {
+          scene.input.keyboard.enabled = true;
+        }
+      };
+
+      const closeX = modalOverlay.querySelector('#close-credentials-x');
+      const closeBtn = modalOverlay.querySelector('#close-credentials-btn');
+      const toggleBtn = modalOverlay.querySelector('#toggle-edit-form-btn');
+      const editForm = modalOverlay.querySelector('#editor-edit-form');
+      const saveBtn = modalOverlay.querySelector('#save-credentials-btn');
+      const saveStatus = modalOverlay.querySelector('#save-status-msg');
+
+      if (closeX) closeX.addEventListener('click', closeModal);
+      if (closeBtn) closeBtn.addEventListener('click', closeModal);
+      modalOverlay.addEventListener('click', (e) => {
+        if (e.target === modalOverlay) closeModal();
+      });
+
+      const handleKey = (e) => {
+        if (e.key === 'Escape') {
+          document.removeEventListener('keydown', handleKey);
+          closeModal();
+        }
+      };
+      document.addEventListener('keydown', handleKey);
+
+      if (toggleBtn && editForm) {
+        toggleBtn.addEventListener('click', () => {
+          const isHidden = editForm.style.display === 'none';
+          editForm.style.display = isHidden ? 'block' : 'none';
+          toggleBtn.textContent = isHidden ? '✕ Hide Credentials Editor' : '✏️ Edit / Update Credentials';
+        });
+      }
+
+      if (saveBtn) {
+        saveBtn.addEventListener('click', () => {
+          const nameInput = modalOverlay.querySelector('#input-editor-name');
+          const emailInput = modalOverlay.querySelector('#input-editor-email');
+          const roleInput = modalOverlay.querySelector('#input-editor-role');
+
+          const newName = (nameInput && nameInput.value.trim()) || 'dush_dev';
+          const newEmail = (emailInput && emailInput.value.trim()) || 'duskonpaul@gmail.com';
+          const newRole = (roleInput && roleInput.value.trim()) || 'GAME DESIGN, PROGRAMMING';
+
+          localStorage.setItem('ashooter_editor_name', newName);
+          localStorage.setItem('ashooter_editor_email', newEmail);
+          localStorage.setItem('ashooter_editor_role', newRole);
+
+          const dispName = modalOverlay.querySelector('#disp-editor-name');
+          const dispEmail = modalOverlay.querySelector('#disp-editor-email');
+          const dispRole = modalOverlay.querySelector('#disp-editor-role');
+
+          if (dispName) dispName.textContent = newName;
+          if (dispEmail) dispEmail.textContent = newEmail;
+          if (dispRole) dispRole.textContent = newRole;
+
+          if (typeof onSaveCallback === 'function') {
+            try {
+              onSaveCallback(newName, newEmail, newRole);
+            } catch (err) {
+              console.warn('onSaveCallback error:', err);
+            }
+          }
+
+          if (saveStatus) {
+            saveStatus.style.display = 'inline';
+            setTimeout(() => { if (saveStatus) saveStatus.style.display = 'none'; }, 2500);
+          }
+        });
+      }
+    }
+
+    // --------------------------------------------------------------------------
+    // 4.5 ZTYPE 13-SECTOR CAMPAIGN BLUEPRINT
+    // Distinct fleet rosters, enemy speeds, splitters, and tactical challenges
+    // --------------------------------------------------------------------------
+    const ZTYPE_SECTORS = [
+      { num: 1, title: 'RECONNAISSANCE', scouts: 5, fighters: 0, cruisers: 0, delay: 1950 },
+      { num: 2, title: 'SCOUT OUTPOST', scouts: 6, fighters: 2, cruisers: 0, delay: 1650 },
+      { num: 3, title: 'CARRIER SIGHTING', scouts: 7, fighters: 4, cruisers: 1, delay: 1400 },
+      { num: 4, title: 'INTERCEPTOR PATROL', scouts: 8, fighters: 7, cruisers: 1, delay: 1250 },
+      { num: 5, title: 'ASTEROID SHOWER', scouts: 12, fighters: 7, cruisers: 2, delay: 1100 },
+      { num: 6, title: 'DREADNOUGHT ASSAULT', scouts: 9, fighters: 9, cruisers: 2, delay: 1000 },
+      { num: 7, title: 'QUANTUM VORTEX', scouts: 10, fighters: 11, cruisers: 3, delay: 900 },
+      { num: 8, title: 'CARRIER BARRAGE', scouts: 10, fighters: 13, cruisers: 3, delay: 820 },
+      { num: 9, title: 'HYPERDRIVE SWARM', scouts: 11, fighters: 16, cruisers: 4, delay: 740 },
+      { num: 10, title: 'NEBULA EMBERS', scouts: 11, fighters: 16, cruisers: 4, delay: 680 },
+      { num: 11, title: 'ARMORED DIVISION', scouts: 12, fighters: 18, cruisers: 5, delay: 620 },
+      { num: 12, title: 'DEEP SPACE SIEGE', scouts: 13, fighters: 20, cruisers: 5, delay: 560 },
+      { num: 13, title: 'THE MOTHERSHIP NEXUS', scouts: 15, fighters: 22, cruisers: 6, delay: 500 }
+    ];
+
+    // --------------------------------------------------------------------------
+    // 5. SCENE 3: MAIN GAMEPLAY LOOP (GameScene)
+    // --------------------------------------------------------------------------
+    class GameScene extends Phaser.Scene {
+      constructor() {
+        super({ key: 'GameScene' });
+      }
+
+      create() {
+        const { width, height } = this.scale;
+
+        // Reset session stats
+        this.score = 0;
+        this.displayScore = 0;
+        this.wave = 1;
+        this.lives = 1; // 1 Life Survival Mode: Game Over on any word breach
+        this.shield = 100;
+        this.combo = 0;
+        this.streak = 0;
+        this.maxCombo = 0;
+        this.multiplier = 1;
+        this.currentMultiplier = 1;
+        this.maxMultiplier = 1;
+        this.empBombs = 3;
+        this.empUsedCount = 0;
+        this.enemiesDestroyed = 0;
+        this.minesDestroyed = 0;
+        this.totalKeystrokes = 0;
+        this.correctKeystrokes = 0;
+        this.gameStartTime = this.time.now;
+        this.isGameOver = false;
+        this.isPaused = false;
+        this.pauseMenuContainer = null;
+
+        // Universe background with photo of Earth from space
+        if (this.textures.exists('game_bg')) {
+          const bgImg = this.add.image(width / 2, height / 2, 'game_bg').setOrigin(0.5).setDepth(0);
+          const scale = Math.max(width / bgImg.width, height / bgImg.height);
+          bgImg.setScale(scale);
+
+          // Subtle dark overlay to ensure maximum readability and high contrast for enemy words & ship
+          const overlay = this.add.graphics().setDepth(1);
+          overlay.fillStyle(0x020617, 0.38);
+          overlay.fillRect(0, 0, width, height);
+        } else {
+          // Space universe background fallback
+          const bg = this.add.graphics().setDepth(0);
+          bg.fillGradientStyle(0x05081a, 0x05081a, 0x000000, 0x000000, 1);
+          bg.fillRect(0, 0, width, height);
+        }
+
+        // State machine
+        this.enemies = [];
+        this.lockedEnemy = null;
+        this.activeWordsSet = new Set();
+        this.spawnQueue = [];
+
+        // Baseline defense threshold
+        this.defenseBaselineY = height - 85;
+
+        // Setup background stars
+        this.createStarfield();
+
+        // Baseline defense barrier line
+        this.createDefenseGrid();
+
+        // Setup player ship
+        this.createPlayerShip();
+
+        // Setup targeting reticle
+        this.reticle = this.add.image(-100, -100, 'reticle').setScale(1.15).setDepth(20).setVisible(false);
+
+        // HUD overlay
+        this.createHUD();
+
+        // Wave management
+        this.isSpawningWave = false;
+        this.spawnTimer = null;
+        this.isWaveClearing = false;
+
+        // Global reference for DOM touch keyboard & controls
+        window.activeGameScene = this;
+
+        // Idle timer for guidance
+        this.idleTime = 0;
+        this.isGuideVisible = false;
+
+        // Start procedural electro synthwave BGM
+        sound.startBGM();
+
+        // Setup keyboard listener
+        this.setupKeyboardInput();
+
+        // Start first wave
+        this.startWave(1);
+      }
+
+      // Parallax starfield (200 stars across 3 velocity bands with subtle color tints)
+      createStarfield() {
+        const { width, height } = this.scale;
+        this.stars = [];
+        const count = 200;
+        const colors = [0xffffff, 0xffeebb, 0xbbffff, 0xffbbbb];
+        for (let i = 0; i < count; i++) {
+          const x = Phaser.Math.Between(0, width);
+          const y = Phaser.Math.Between(0, height);
+          const depthLayer = Phaser.Math.Between(1, 3);
+          const size = depthLayer === 3 ? 2.5 : depthLayer === 2 ? 1.6 : 1.0;
+          const speed = depthLayer * 28;
+          const alpha = depthLayer === 3 ? 0.95 : depthLayer === 2 ? 0.65 : 0.35;
+          const color = colors[Phaser.Math.Between(0, colors.length - 1)];
+          const star = this.add.circle(x, y, size, color, alpha).setDepth(0);
+          this.stars.push({ obj: star, speed });
+        }
+      }
+
+      // Tilted tactical space grid (matching screenshot) & defense baseline
+      createDefenseGrid() {
+        const { width, height } = this.scale;
+        const gridGfx = this.add.graphics().setDepth(1);
+
+        // Subtle dark cyan tactical angled space grid (matching screenshot)
+        gridGfx.lineStyle(1, 0x00ffc8, 0.05);
+        const spacing = 36;
+        const angleRad = -0.16; // ~9.2 degrees tilt matching screenshot
+        const cosA = Math.cos(angleRad);
+        const sinA = Math.sin(angleRad);
+        const diag = Math.sqrt(width * width + height * height) + 160;
+
+        // Tilted grid columns
+        for (let offset = -diag / 2; offset < diag; offset += spacing) {
+          const x1 = offset * cosA - (-diag / 2) * sinA + width / 2;
+          const y1 = offset * sinA + (-diag / 2) * cosA + height / 2;
+          const x2 = offset * cosA - (diag / 2) * sinA + width / 2;
+          const y2 = offset * sinA + (diag / 2) * cosA + height / 2;
+          gridGfx.lineBetween(x1, y1, x2, y2);
+        }
+
+        // Tilted grid rows
+        for (let offset = -diag / 2; offset < diag; offset += spacing) {
+          const x1 = (-diag / 2) * cosA - offset * sinA + width / 2;
+          const y1 = (-diag / 2) * sinA + offset * cosA + height / 2;
+          const x2 = (diag / 2) * cosA - offset * sinA + width / 2;
+          const y2 = (diag / 2) * sinA + offset * cosA + height / 2;
+          gridGfx.lineBetween(x1, y1, x2, y2);
+        }
+
+        // Defense baseline perimeter graphics
+        this.defenseLineGfx = this.add.graphics().setDepth(14);
+        this.drawDefensePerimeter(false);
+      }
+
+      drawDefensePerimeter(isDanger = false) {
+        if (!this.defenseLineGfx) return;
+        const { width } = this.scale;
+        this.defenseLineGfx.clear();
+        const y = this.defenseBaselineY;
+
+        if (isDanger) {
+          // Warning red glowing alert line when an enemy word gets close
+          this.defenseLineGfx.lineStyle(2.5, 0xef4444, 0.90);
+          this.defenseLineGfx.lineBetween(0, y, width, y);
+          this.defenseLineGfx.lineStyle(6, 0xef4444, 0.25);
+          this.defenseLineGfx.lineBetween(0, y, width, y);
+        } else {
+          // Subtle low-profile baseline (no distracting bright blue line)
+          this.defenseLineGfx.lineStyle(1, 0x34d399, 0.16);
+          this.defenseLineGfx.lineBetween(0, y, width, y);
+        }
+      }
+
+      // Player spaceship anchored at bottom center
+      createPlayerShip() {
+        const { width } = this.scale;
+        this.playerX = width / 2;
+        this.playerY = this.defenseBaselineY + 28;
+
+        this.playerShip = this.add.image(this.playerX, this.playerY, 'player_ship')
+          .setDepth(15)
+          .setScale(0.66);
+
+        // Initial rotation facing up (0 rad for upward-pointing sprite)
+        this.playerShip.setRotation(0);
+
+        // Alternating wingtip dual laser cannons
+        this.cannonSide = 0;
+
+        // Targeting lock-on vector beam graphics
+        this.targetingBeamGfx = this.add.graphics().setDepth(14);
+
+        // Shield bubble dome around player
+        this.shieldGfx = this.add.graphics().setDepth(14);
+        this.drawShieldDome();
+
+        // Thruster flame effect
+        this.thrusterGfx = this.add.graphics().setDepth(13);
+      }
+
+      drawShieldDome() {
+        this.shieldGfx.clear();
+      }
+
+      // Minimalist Authentic HUD (Screenshot 2)
+      createHUD() {
+        const { width, height } = this.scale;
+        const hudDepth = 30;
+
+        // 1. Pause button at top-left: ❚❚ (Screenshot 2)
+        this.pauseBtn = this.add.text(28, 26, '❚❚', {
+          fontFamily: FONT_MONO,
+          fontSize: '22px',
+          color: '#557788'
+        }).setOrigin(0.5).setDepth(hudDepth).setInteractive({ useHandCursor: true });
+
+        this.pauseBtn.on('pointerover', () => this.pauseBtn.setColor('#00ffcc'));
+        this.pauseBtn.on('pointerout', () => this.pauseBtn.setColor('#557788'));
+        this.pauseBtn.on('pointerdown', () => this.togglePause());
+
+        // 2. Floating guidance text in lower-center area (Screenshot 2)
+        this.guideText1 = this.add.text(width / 2, height - 200, 'Type the words to shoot!', {
+          fontFamily: FONT_MONO,
+          fontSize: '17px',
+          color: '#658292',
+          letterSpacing: 1
+        }).setOrigin(0.5).setDepth(12).setVisible(false);
+
+        this.guideText2 = this.add.text(width / 2, height - 172, 'ENTER for EMP', {
+          fontFamily: FONT_MONO,
+          fontSize: '14px',
+          color: '#466270',
+          letterSpacing: 1.5
+        }).setOrigin(0.5).setDepth(12).setVisible(false);
+
+        // 3. Golden-Yellow EMP Hexagon at bottom-right (Screenshot 2)
+        this.empHexagon = this.add.image(width - 42, height - 46, 'emp_hexagon')
+          .setDepth(hudDepth)
+          .setInteractive({ useHandCursor: true });
+
+        this.empHexText = this.add.text(width - 42, height - 46, `${this.empBombs}`, {
+          fontFamily: FONT_MONO,
+          fontSize: '20px',
+          fontWeight: '900',
+          color: '#000000'
+        }).setOrigin(0.5).setDepth(hudDepth + 1);
+
+        this.empHexagon.on('pointerdown', () => this.deployEMP());
+        this.empHexagon.on('pointerover', () => this.empHexagon.setScale(1.08));
+        this.empHexagon.on('pointerout', () => this.empHexagon.setScale(1.0));
+
+        // 4. Score/Wave HUD omitted during active gameplay (score only displayed on Pause & Game Over)
+        this.scoreText = null;
+        this.waveText = null;
+        this.speedBadgeText = null;
+
+        // Active Lock-On status line (discreetly positioned)
+        this.targetHUD = this.add.text(width / 2, this.defenseBaselineY + 62, '', {
+          fontFamily: FONT_MONO,
+          fontSize: '15px',
+          color: '#64748b'
+        }).setOrigin(0.5).setDepth(hudDepth);
+      }
+
+      updateEMPHUD() {
+        if (!this.empHexText || !this.empHexagon) return;
+
+        this.empHexText.setText(`${this.empBombs}`);
+        if (this.empBombs <= 0) {
+          this.empHexagon.setAlpha(0.25);
+          this.empHexText.setColor('#475569');
+        } else {
+          this.empHexagon.setAlpha(1.0);
+          this.empHexText.setColor('#000000');
+        }
+      }
+
+      // Setup Keyboard Listener
+      setupKeyboardInput() {
+        this.onKeyDown = (e) => {
+          if (this.isGameOver) return;
+
+          // EMP Shockwave Trigger (Spacebar or Enter)
+          if (e.key === ' ' || e.code === 'Space' || e.key === 'Enter') {
+            e.preventDefault();
+            this.idleTime = 0;
+            if (this.isGuideVisible) {
+              this.guideText1.setVisible(false);
+              this.guideText2.setVisible(false);
+              this.isGuideVisible = false;
+            }
+            this.deployEMP();
+            return;
+          }
+
+          // Pause toggle (Escape key only - 'p'/'P' removed so typing words with 'p' never pauses)
+          if (e.key === 'Escape') {
+            this.togglePause();
+            return;
+          }
+
+          if (this.isPaused) return;
+
+          // Filter for valid alphabet letters (a-z)
+          if (e.key.length !== 1 || !/[a-zA-Z]/.test(e.key)) {
+            return;
+          }
+
+          // Reset idle timer
+          this.idleTime = 0;
+          if (this.isGuideVisible) {
+            this.guideText1.setVisible(false);
+            this.guideText2.setVisible(false);
+            this.isGuideVisible = false;
+          }
+
+          // Prevent default scrolling
+          e.preventDefault();
+
+          const key = e.key.toLowerCase();
+          this.handleKeyInput(key);
+        };
+
+        window.addEventListener('keydown', this.onKeyDown);
+
+        // Clean up on scene shutdown
+        this.events.once('shutdown', () => {
+          window.removeEventListener('keydown', this.onKeyDown);
+          if (this.spawnTimer) this.spawnTimer.remove();
+          if (this.targetingBeamGfx) this.targetingBeamGfx.clear();
+          if (this.pauseMenuContainer) {
+            this.pauseMenuContainer.destroy();
+            this.pauseMenuContainer = null;
+          }
+          if (window.activeGameScene === this) window.activeGameScene = null;
+        });
+      }
+
+      // Tactical Screen-Clearing EMP Shockwave
+      deployEMP() {
+        if (this.isGameOver || this.isPaused) return;
+
+        if (this.empBombs <= 0) {
+          sound.error();
+          // Shake EMP button to indicate empty
+          const targets = [this.empHexagon, this.empHexText].filter(Boolean);
+          if (targets.length > 0) {
+            const baseX = this.scale.width - 42;
+            this.tweens.add({
+              targets: targets,
+              x: baseX + 6,
+              duration: 50,
+              yoyo: true,
+              repeat: 3,
+              onComplete: () => {
+                targets.forEach(t => { t.x = baseX; });
+              }
+            });
+          }
+          return;
+        }
+
+        this.empBombs--;
+        this.empUsedCount++;
+        this.updateEMPHUD();
+
+        // Audio burst
+        sound.emp();
+
+        // Camera FX: Screen flash & shake
+        this.cameras.main.flash(400, 255, 255, 255);
+        this.cameras.main.shake(500, 0.025);
+
+        // Visual Shockwave Ring from player position expanding over whole viewport
+        const shockwave = this.add.circle(this.playerX, this.playerY, 20).setDepth(45);
+        shockwave.setStrokeStyle(8, 0x00f0ff, 1);
+
+        this.tweens.add({
+          targets: shockwave,
+          scale: 40,
+          alpha: 0,
+          duration: 650,
+          ease: 'Cubic.easeOut',
+          onComplete: () => shockwave.destroy()
+        });
+
+        // Floating EMP announcement
+        const empBanner = this.add.text(this.scale.width / 2, this.scale.height / 2, '⚡ EMP SHOCKWAVE DETONATED ⚡', {
+          fontFamily: FontManager.getFontFamily(),
+          fontSize: '22px',
+          fontWeight: '900',
+          color: '#00f0ff',
+          stroke: '#000000',
+          strokeThickness: 4,
+          letterSpacing: 3
+        }).setOrigin(0.5).setDepth(48);
+
+        this.tweens.add({
+          targets: empBanner,
+          scale: 1.3,
+          alpha: 0,
+          duration: 900,
+          ease: 'Sine.easeOut',
+          onComplete: () => empBanner.destroy()
+        });
+
+        // Release locked target & hide reticle
+        this.lockedEnemy = null;
+        this.reticle.setVisible(false);
+        this.updateTargetHUD();
+
+        // Destroy every visible hostile craft & mine in a staggered chain reaction
+        const targetsToDestroy = [...this.enemies];
+        targetsToDestroy.forEach((enemy, index) => {
+          this.time.delayedCall(index * 35, () => {
+            if (!enemy.isDestroyed) {
+              this.destroyEnemy(enemy, true); // true = killed by EMP (no cruiser mine spawn)
+            }
+          });
+        });
+      }
+
+      togglePause() {
+        this.isPaused = !this.isPaused;
+        const { width, height } = this.scale;
+
+        if (this.isPaused) {
+          // Pause wave spawn timer if running
+          if (this.spawnTimer) {
+            this.spawnTimer.paused = true;
+          }
+
+          // Build authentic Pause Overlay (matching user screenshot)
+          this.pauseMenuContainer = this.add.container(0, 0).setDepth(60);
+
+          // 1. Dark semi-transparent canvas backdrop
+          const backdrop = this.add.rectangle(width / 2, height / 2, width, height, 0x030611, 0.90)
+            .setInteractive(); // Blocks click-through to underlying game scene
+          this.pauseMenuContainer.add(backdrop);
+
+          // Elevate player ship and EMP hexagon to foreground visibility
+          if (this.playerShip) this.playerShip.setDepth(65);
+          if (this.empHexagon) this.empHexagon.setDepth(65);
+          if (this.empHexText) this.empHexText.setDepth(66);
+          if (this.pauseBtn) this.pauseBtn.setDepth(65);
+
+          // 2. Title: GAME PAUSED
+          const title = this.add.text(width / 2, 100, 'GAME PAUSED', {
+            fontFamily: FONT_MONO,
+            fontSize: '30px',
+            fontWeight: 'bold',
+            color: '#c4d1db',
+            letterSpacing: 2
+          }).setOrigin(0.5);
+          this.pauseMenuContainer.add(title);
+
+          // 3. SOUND Section
+          const soundHeader = this.add.text(width / 2, 185, 'SOUND', {
+            fontFamily: FONT_MONO,
+            fontSize: '14px',
+            color: '#657788',
+            letterSpacing: 2
+          }).setOrigin(0.5);
+          this.pauseMenuContainer.add(soundHeader);
+
+          const soundValText = this.add.text(width / 2, 225, `${Math.round(sound.soundVolume * 100)}%`, {
+            fontFamily: FONT_MONO,
+            fontSize: '26px',
+            fontWeight: 'bold',
+            color: '#ff7700' // Vibrant Orange (Screenshot)
+          }).setOrigin(0.5);
+          this.pauseMenuContainer.add(soundValText);
+
+          const soundMinus = this.add.text(width / 2 - 80, 225, '—', {
+            fontFamily: FONT_MONO,
+            fontSize: '26px',
+            color: '#cbd5e1'
+          }).setOrigin(0.5).setInteractive({ useHandCursor: true });
+          this.pauseMenuContainer.add(soundMinus);
+
+          soundMinus.on('pointerover', () => soundMinus.setColor('#ffffff'));
+          soundMinus.on('pointerout', () => soundMinus.setColor('#cbd5e1'));
+          soundMinus.on('pointerdown', () => {
+            sound.setSoundVolume(sound.soundVolume - 0.1);
+            soundValText.setText(`${Math.round(sound.soundVolume * 100)}%`);
+            sound.hit();
+          });
+
+          const soundPlus = this.add.text(width / 2 + 80, 225, '+', {
+            fontFamily: FONT_MONO,
+            fontSize: '26px',
+            color: '#cbd5e1'
+          }).setOrigin(0.5).setInteractive({ useHandCursor: true });
+          this.pauseMenuContainer.add(soundPlus);
+
+          soundPlus.on('pointerover', () => soundPlus.setColor('#ffffff'));
+          soundPlus.on('pointerout', () => soundPlus.setColor('#cbd5e1'));
+          soundPlus.on('pointerdown', () => {
+            sound.setSoundVolume(sound.soundVolume + 0.1);
+            soundValText.setText(`${Math.round(sound.soundVolume * 100)}%`);
+            sound.hit();
+          });
+
+          // 4. MUSIC Section
+          const musicHeader = this.add.text(width / 2, 295, 'MUSIC', {
+            fontFamily: FONT_MONO,
+            fontSize: '14px',
+            color: '#657788',
+            letterSpacing: 2
+          }).setOrigin(0.5);
+          this.pauseMenuContainer.add(musicHeader);
+
+          const musicValText = this.add.text(width / 2, 335, `${Math.round(sound.musicVolume * 100)}%`, {
+            fontFamily: FONT_MONO,
+            fontSize: '26px',
+            fontWeight: 'bold',
+            color: '#ffffff' // Crisp White (Screenshot)
+          }).setOrigin(0.5);
+          this.pauseMenuContainer.add(musicValText);
+
+          const musicMinus = this.add.text(width / 2 - 80, 335, '—', {
+            fontFamily: FONT_MONO,
+            fontSize: '26px',
+            color: '#cbd5e1'
+          }).setOrigin(0.5).setInteractive({ useHandCursor: true });
+          this.pauseMenuContainer.add(musicMinus);
+
+          musicMinus.on('pointerover', () => musicMinus.setColor('#ffffff'));
+          musicMinus.on('pointerout', () => musicMinus.setColor('#cbd5e1'));
+          musicMinus.on('pointerdown', () => {
+            sound.setMusicVolume(sound.musicVolume - 0.1);
+            musicValText.setText(`${Math.round(sound.musicVolume * 100)}%`);
+          });
+
+          const musicPlus = this.add.text(width / 2 + 80, 335, '+', {
+            fontFamily: FONT_MONO,
+            fontSize: '26px',
+            color: '#cbd5e1'
+          }).setOrigin(0.5).setInteractive({ useHandCursor: true });
+          this.pauseMenuContainer.add(musicPlus);
+
+          musicPlus.on('pointerover', () => musicPlus.setColor('#ffffff'));
+          musicPlus.on('pointerout', () => musicPlus.setColor('#cbd5e1'));
+          musicPlus.on('pointerdown', () => {
+            sound.setMusicVolume(sound.musicVolume + 0.1);
+            musicValText.setText(`${Math.round(sound.musicVolume * 100)}%`);
+          });
+
+          // 5. WAVE STATUS & TEAL SEPARATOR LINE (Screenshot)
+          const waveNumPadded = String(this.wave).padStart(3, '0');
+          const waveStatus = `WAVE ${waveNumPadded} CLEAR`;
+          const lineY = 475;
+          const lineLeft = width / 2 - 190;
+          const lineRight = width / 2 + 190;
+
+          const waveText = this.add.text(lineLeft, lineY - 40, waveStatus, {
+            fontFamily: FONT_MONO,
+            fontSize: '32px',
+            fontWeight: 'bold',
+            color: '#0f6e66', // Muted dark teal (Screenshot)
+            letterSpacing: 2
+          });
+          this.pauseMenuContainer.add(waveText);
+
+          const tealLine = this.add.graphics();
+          tealLine.lineStyle(2, 0x0f6e66, 0.95);
+          tealLine.lineBetween(lineLeft, lineY, lineRight, lineY);
+          this.pauseMenuContainer.add(tealLine);
+
+          // SCORE display placed directly below on the left (Screenshot)
+          const scoreStr = String(this.score).padStart(6, '0');
+          const scoreDisplay = this.add.text(lineLeft, lineY + 18, `SCORE: ${scoreStr}`, {
+            fontFamily: FONT_MONO,
+            fontSize: '16px',
+            color: '#475569'
+          });
+          this.pauseMenuContainer.add(scoreDisplay);
+
+          // 6. ACTION BUTTONS: "resume" & "back to title" (Screenshot)
+          const resumeBtn = this.add.text(width / 2, 565, 'resume', {
+            fontFamily: FONT_MONO,
+            fontSize: '26px',
+            color: '#ffffff'
+          }).setOrigin(0.5).setInteractive({ useHandCursor: true });
+          this.pauseMenuContainer.add(resumeBtn);
+
+          resumeBtn.on('pointerover', () => {
+            resumeBtn.setColor('#38bdf8');
+            resumeBtn.setScale(1.05);
+          });
+          resumeBtn.on('pointerout', () => {
+            resumeBtn.setColor('#ffffff');
+            resumeBtn.setScale(1.0);
+          });
+          resumeBtn.on('pointerdown', () => this.togglePause());
+
+          const backBtn = this.add.text(width / 2, 620, 'back to title', {
+            fontFamily: FONT_MONO,
+            fontSize: '26px',
+            color: '#ffffff'
+          }).setOrigin(0.5).setInteractive({ useHandCursor: true });
+          this.pauseMenuContainer.add(backBtn);
+
+          backBtn.on('pointerover', () => {
+            backBtn.setColor('#ff7700');
+            backBtn.setScale(1.05);
+          });
+          backBtn.on('pointerout', () => {
+            backBtn.setColor('#ffffff');
+            backBtn.setScale(1.0);
+          });
+          backBtn.on('pointerdown', () => {
+            sound.lock();
+            this.cameras.main.fade(250, 3, 6, 17, false, (cam, progress) => {
+              if (progress === 1) {
+                this.scene.start('MenuScene');
+              }
+            });
+          });
+
+        } else {
+          // Resume game
+          if (this.pauseMenuContainer) {
+            this.pauseMenuContainer.destroy();
+            this.pauseMenuContainer = null;
+          }
+
+          // Restore original depths
+          if (this.playerShip) this.playerShip.setDepth(20);
+          if (this.empHexagon) this.empHexagon.setDepth(30);
+          if (this.empHexText) this.empHexText.setDepth(31);
+          if (this.pauseBtn) this.pauseBtn.setDepth(30);
+
+          if (this.spawnTimer) {
+            this.spawnTimer.paused = false;
+          }
+
+          this.updateTargetHUD();
+        }
+      }
+
+      // Dynamically re-scale and re-style typography across all active enemies on screen
+      refreshAllEnemyTypography() {
+        const newFont = FontManager.getFontFamily();
+        const newSize = FontManager.getFontSize();
+        const fontSizeNum = FontManager.getFontSizeNumber();
+        const isMono = FontManager.currentType === 'mono';
+        const charWidth = isMono ? Math.round(fontSizeNum * 0.82) : Math.round(fontSizeNum * 0.76);
+
+        this.enemies.forEach(e => {
+          if (!e || e.isDestroyed) return;
+          if (e.letterObjects && e.letterObjects.length > 0) {
+            e.charWidth = charWidth;
+            const totalWordWidth = e.word.length * charWidth;
+            const startX = -totalWordWidth / 2 + charWidth / 2;
+            e.startX = startX;
+
+            for (let i = 0; i < e.letterObjects.length; i++) {
+              const txt = e.letterObjects[i];
+              if (txt && txt.setFontFamily) {
+                txt.setFontFamily(newFont);
+                txt.setFontSize(newSize);
+                txt.x = startX + i * charWidth;
+              }
+            }
+
+            const boxW = totalWordWidth + (e.isBoss ? Math.round(fontSizeNum * 1.2) : Math.round(fontSizeNum * 1.0));
+            const boxH = e.isBoss ? Math.round(fontSizeNum * 1.7) : Math.round(fontSizeNum * 1.55);
+            if (e.bgBox && e.bgBox.setSize) {
+              e.bgBox.setSize(boxW, boxH);
+            }
+            if (e.drone) {
+              e.drone.x = boxW / 2 + 10;
+            }
+            if (e.activeCursor && e.activeCursor.setSize) {
+              e.activeCursor.setSize(charWidth, e.isBoss ? 3 : 2);
+            }
+          }
+        });
+
+        if (this.lockedEnemy) {
+          this.updateEnemyWordVisuals(this.lockedEnemy);
+        }
+      }
+
+      // Wave & Sector Progression Manager
+      startWave(waveNum) {
+        this.wave = waveNum;
+        sound.waveClear();
+
+        // Get sector blueprint (supports 13 defined sectors, plus endless loop scaling)
+        const sectorIndex = (waveNum - 1) % ZTYPE_SECTORS.length;
+        const sector = ZTYPE_SECTORS[sectorIndex];
+        const loopCount = Math.floor((waveNum - 1) / ZTYPE_SECTORS.length);
+
+        const sectorNumStr = waveNum < 10 ? '0' + waveNum : `${waveNum}`;
+        if (this.waveText) this.waveText.setText(`WAVE ${sectorNumStr}`);
+        if (this.sectorTitleText) this.sectorTitleText.setText(sector.title);
+
+        // Shield reward & periodic EMP recharge (every 3 sectors or boss clear)
+        this.shield = Math.min(100, this.shield + 30);
+        if (waveNum > 1 && (waveNum % 3 === 0 || waveNum === 13)) {
+          this.empBombs = Math.min(5, this.empBombs + 1);
+        }
+
+        this.updateShieldBar();
+        this.drawShieldDome();
+        this.updateEMPHUD();
+
+        // Build the sector's spawn queue
+        this.spawnQueue = [];
+
+        // Scouts (light agile interceptors)
+        const scoutCount = sector.scouts + loopCount * 3;
+        for (let i = 0; i < scoutCount; i++) this.spawnQueue.push('scout');
+
+        // Fighters (medium sinusoidal evasive craft)
+        const fighterCount = sector.fighters + loopCount * 2;
+        for (let i = 0; i < fighterCount; i++) this.spawnQueue.push('fighter');
+
+        // Cruisers (armored dreadnoughts that burst into plasma mines)
+        const cruiserCount = sector.cruisers + loopCount * 1;
+        for (let i = 0; i < cruiserCount; i++) this.spawnQueue.push('cruiser');
+
+        // Shuffle spawn queue for dynamic tactical variety
+        Phaser.Utils.Array.Shuffle(this.spawnQueue);
+
+        // Dynamic wave speed calculation: every wave increases speed
+        const waveBaseSpeed = 85 + (waveNum - 1) * 25;
+        const speedPercent = Math.round(((waveBaseSpeed - 85) / 85) * 100);
+
+        if (this.speedBadgeText) {
+          const speedColors = ['#00f0ff', '#22c55e', '#f59e0b', '#f97316', '#ef4444', '#d946ef'];
+          const colorIdx = Math.min(speedColors.length - 1, waveNum - 1);
+          this.speedBadgeText.setText(waveNum > 1 ? `SPD: ${waveBaseSpeed} PX/S (+${speedPercent}%)` : `SPD: ${waveBaseSpeed} PX/S`);
+          this.speedBadgeText.setColor(speedColors[colorIdx]);
+        }
+
+        // Start spawning the wave's words immediately (wave completion shows "Wave 001 Clear", etc.)
+        this.isSpawningWave = true;
+        this.isNextSpawnPending = false;
+        if (this.spawnTimer) {
+          this.spawnTimer.remove();
+          this.spawnTimer = null;
+        }
+
+        // Single-word linear progression: spawn the first word
+        this.spawnNextEnemyWord();
+      }
+
+      showWaveBanner(text, subText, callback) {
+        if (typeof subText === 'function') {
+          callback = subText;
+          subText = null;
+        }
+
+        const { width, height } = this.scale;
+        const bannerContainer = this.add.container(width / 2, height / 2 - 40).setDepth(40).setAlpha(0).setScale(0.85);
+
+        const banner = this.add.text(0, subText ? -14 : 0, text, {
+          fontFamily: FONT_MONO,
+          fontSize: '40px',
+          fontWeight: 'bold',
+          color: '#ffffff',
+          letterSpacing: 3
+        }).setOrigin(0.5);
+        bannerContainer.add(banner);
+
+        if (subText) {
+          const sub = this.add.text(0, 22, subText, {
+            fontFamily: FONT_MONO,
+            fontSize: '15px',
+            fontWeight: '600',
+            color: '#ff7700',
+            letterSpacing: 2
+          }).setOrigin(0.5);
+          bannerContainer.add(sub);
+        }
+
+        this.tweens.add({
+          targets: bannerContainer,
+          alpha: 1,
+          scale: 1,
+          duration: 300,
+          ease: 'Cubic.easeOut',
+          onComplete: () => {
+            this.time.delayedCall(1000, () => {
+              this.tweens.add({
+                targets: bannerContainer,
+                alpha: 0,
+                scale: 1.1,
+                duration: 250,
+                ease: 'Sine.easeIn',
+                onComplete: () => {
+                  bannerContainer.destroy();
+                  if (callback) callback();
+                }
+              });
+            });
+          }
+        });
+      }
+
+      // Distance range configuration: words are spaced out with a comfortable visual gap
+      getSpawnDistanceRange() {
+        if (this.wave === 1) return 240;
+        if (this.wave <= 3) return 220;
+        return 200;
+      }
+
+      getMaxConcurrentWords() {
+        if (this.wave === 1) return 2;
+        if (this.wave <= 3) return 2;
+        return 3;
+      }
+
+      // Check if the previous word has traveled far enough (cleared the distance range) to throw another
+      canSpawnNextWord() {
+        if (this.isGameOver || this.isPaused || !this.isSpawningWave) return false;
+        if (this.spawnQueue.length === 0) return false;
+        if (this.isNextSpawnPending) return false;
+
+        const activeEnemies = this.enemies.filter(e => !e.isDestroyed);
+        if (activeEnemies.length === 0) return true;
+
+        if (activeEnemies.length >= this.getMaxConcurrentWords()) return false;
+
+        // Ensure the topmost word has descended beyond our vertical distance range
+        const highestWordY = Math.min(...activeEnemies.map(e => e.container.y));
+        return highestWordY >= this.getSpawnDistanceRange();
+      }
+
+      // Spawn next word with distance range and horizontal spacing
+      spawnNextEnemyWord() {
+        if (this.isGameOver || this.isPaused || !this.isSpawningWave) return;
+
+        if (this.spawnQueue.length === 0) {
+          const activeCount = this.enemies.filter(e => !e.isDestroyed).length;
+          if (activeCount === 0) {
+            this.isSpawningWave = false;
+            this.checkWaveCompletion();
+          }
+          return;
+        }
+
+        this.isNextSpawnPending = false;
+        const enemyType = this.spawnQueue.shift();
+        const { width } = this.scale;
+        const padding = 130;
+
+        // Pick horizontal position avoiding overlap with words currently in the upper half
+        let spawnX = Phaser.Math.Between(padding, width - padding);
+        const upperEnemies = this.enemies.filter(e => !e.isDestroyed && e.container.y < 420);
+        for (let attempt = 0; attempt < 8; attempt++) {
+          const tooClose = upperEnemies.some(e => Math.abs(e.container.x - spawnX) < 170);
+          if (!tooClose) break;
+          spawnX = Phaser.Math.Between(padding, width - padding);
+        }
+
+        const spawnY = -35;
+        this.spawnSingleEnemy(enemyType, spawnX, spawnY);
+      }
+
+      scheduleNextWord(delay = 400) {
+        if (this.isNextSpawnPending || this.isGameOver || !this.isSpawningWave) return;
+        this.isNextSpawnPending = true;
+        this.time.delayedCall(delay, () => {
+          this.isNextSpawnPending = false;
+          if (!this.isGameOver && !this.isPaused && this.isSpawningWave && this.canSpawnNextWord()) {
+            this.spawnNextEnemyWord();
+          }
+        });
+      }
+
+      // Legacy forwarders
+      spawnEnemyCluster() {
+        if (this.canSpawnNextWord()) {
+          this.spawnNextEnemyWord();
+        }
+      }
+
+      spawnNextEnemy() {
+        if (this.canSpawnNextWord()) {
+          this.spawnNextEnemyWord();
+        }
+      }
+
+      // Spawn single enemy unit with progressive wave difficulty system:
+      // 1. Word Speed: Increases steadily with each wave (waveSpeedBonus = (wave - 1) * 9.0)
+      // 2. Word Length & Complexity:
+      //    - Waves 1-3: Short words (3-5 letters)
+      //    - Waves 4-7: Medium words (5-7 letters) mixed with occasional short words
+      //    - Waves 8+: Long, complex words (7+ letters) with capital letters or special characters
+      // 3. Wave Bosses: End of every 5th wave spawns a Boss Word with missile words
+      spawnSingleEnemy(enemyType, spawnX, spawnY) {
+        if (this.isGameOver || this.isPaused) return;
+
+        const { width } = this.scale;
+
+        // Progressive wave speed: Increased text speed across all waves
+        // Wave 1: ~85 px/s
+        // Wave 2: ~110 px/s (+29%)
+        // Wave 3: ~135 px/s (+59%)
+        // Wave 4: ~160 px/s (+88%)
+        // Wave 5: ~185 px/s (+118%)
+        // Wave 6+: +25 px/s per additional wave
+        const waveBaseSpeed = 85 + (this.wave - 1) * 25;
+        let baseSpeed = waveBaseSpeed;
+        let category = 'short';
+        let scoreVal = 100 + (this.wave - 1) * 35;
+        let swayAmplitude = 0;
+
+        // Wave differentiation: length, vocabulary depth, and enemy movement dynamics
+        if (this.wave === 1) {
+          // Wave 1: 100% short words (3-4 letters), calm steady descent
+          category = 'short';
+        } else if (this.wave === 2) {
+          // Wave 2: 70% short words, 30% medium words (4-6 letters)
+          category = Math.random() < 0.70 ? 'short' : 'medium';
+        } else if (this.wave === 3) {
+          // Wave 3: 40% short, 60% medium words (5-7 letters)
+          category = Math.random() < 0.40 ? 'short' : 'medium';
+        } else if (this.wave === 4) {
+          // Wave 4: 70% medium, 30% long words (7-9 letters), capital letters begin
+          category = Math.random() < 0.70 ? 'medium' : 'long';
+        } else if (this.wave === 5) {
+          // Wave 5: 35% medium, 65% long words (8-12 letters)
+          category = Math.random() < 0.35 ? 'medium' : 'long';
+        } else {
+          // Wave 6+: Apex challenge combining long and boss words
+          category = Math.random() < 0.60 ? 'long' : 'boss';
+        }
+
+        // Enemy-type tactical speed modifiers
+        if (enemyType === 'fighter') {
+          baseSpeed *= 1.10;
+          swayAmplitude = Math.min(38, 8 + this.wave * 3.5);
+        } else if (enemyType === 'cruiser') {
+          baseSpeed *= 0.88;
+          scoreVal = Math.round(scoreVal * 1.5);
+        }
+
+        // Apply slight natural speed variance (+/- 6%)
+        baseSpeed *= (0.94 + Math.random() * 0.12);
+
+
+        // Avoid starting letter collisions with current active words if possible
+        const existingInitialLetters = new Set(
+          this.enemies.filter(e => !e.isDestroyed).map(e => e.word[0])
+        );
+
+        let word = getRandomWord(category, this.activeWordsSet);
+        if (existingInitialLetters.has(word[0])) {
+          for (let attempt = 0; attempt < 8; attempt++) {
+            const candidate = getRandomWord(category, this.activeWordsSet);
+            if (!existingInitialLetters.has(candidate[0])) {
+              word = candidate;
+              break;
+            }
+          }
+        }
+
+        // Progressive word complexity:
+        // Waves 4+: occasional capital letters on cruisers and fighters
+        // Waves 7+: capital letters, symbols, numbers, and punctuation
+        if (this.wave >= 4) {
+          const capChance = this.wave >= 8 ? 0.5 : (enemyType === 'cruiser' ? 0.6 : 0.25);
+          if (Math.random() < capChance) {
+            word = word.charAt(0).toUpperCase() + word.slice(1);
+          }
+        }
+        if (this.wave >= 7) {
+          const charChance = this.wave >= 10 ? 0.35 : 0.20;
+          if (Math.random() < charChance) {
+            const specialChars = ['-', '!', '.', '_', '9', '7', 'X'];
+            const charChoice = specialChars[Phaser.Math.Between(0, specialChars.length - 1)];
+            word = word + charChoice;
+          }
+        }
+
+        this.activeWordsSet.add(word);
+
+        // Typography sizing using FontManager settings (defaults to 24px)
+        const isMono = FontManager.currentType === 'mono';
+        const fontSizeNum = FontManager.getFontSizeNumber();
+        const charWidth = isMono ? Math.round(fontSizeNum * 0.82) : Math.round(fontSizeNum * 0.76);
+        const totalWordWidth = word.length * charWidth;
+        const boxW = totalWordWidth + Math.round(fontSizeNum * 1.0);
+        const boxH = Math.round(fontSizeNum * 1.55);
+        const startX = -totalWordWidth / 2 + charWidth / 2;
+        const cursorY = Math.round(boxH / 2 - 2);
+
+        // Ensure word does not spawn off-screen edges
+        const halfW = boxW / 2 + 25;
+        const boundedX = Phaser.Math.Clamp(spawnX, halfW, width - halfW - 25);
+
+        // Build enemy game object container
+        const enemyContainer = this.add.container(boundedX, spawnY).setDepth(10);
+
+        // 1. Solid Black Rectangular Badge
+        const bgBox = this.add.rectangle(0, 0, boxW, boxH, 0x000000, 1.0);
+        enemyContainer.add(bgBox);
+
+        // 2. Target Drone attached to the right edge with wave-specific threat tint
+        const drone = this.add.image(boxW / 2 + 10, 0, 'target_drone').setDepth(11);
+        const waveTints = [0x00f0ff, 0x22c55e, 0xf59e0b, 0xf97316, 0xef4444, 0xd946ef];
+        const droneTint = waveTints[Math.min(waveTints.length - 1, this.wave - 1)];
+        drone.setTint(droneTint);
+        enemyContainer.add(drone);
+
+        // 3. Active letter cursor underline
+        const activeCursor = this.add.rectangle(0, cursorY, charWidth, 2, 0x00f0ff)
+          .setVisible(false);
+        enemyContainer.add(activeCursor);
+
+        // 4. Individual letter text objects with uniform font & dynamic font size
+        const letterObjects = [];
+        for (let i = 0; i < word.length; i++) {
+          const lx = startX + i * charWidth;
+          const charText = this.add.text(lx, 0, word[i], {
+            fontFamily: FontManager.getFontFamily(),
+            fontSize: FontManager.getFontSize(),
+            fontWeight: '600',
+            color: '#ffffff'
+          }).setOrigin(0.5);
+
+          enemyContainer.add(charText);
+          letterObjects.push(charText);
+        }
+
+        // Store enemy metadata
+        const enemyData = {
+          container: enemyContainer,
+          drone: drone,
+          bgBox: bgBox,
+          activeCursor: activeCursor,
+          letterObjects: letterObjects,
+          charWidth: charWidth,
+          startX: startX,
+          word: word,
+          typedIndex: 0,
+          speed: baseSpeed,
+          baseScore: scoreVal,
+          type: enemyType,
+          baseX: boundedX,
+          swayAmplitude: swayAmplitude,
+          phase: Math.random() * Math.PI * 2,
+          isDestroyed: false,
+          isMine: false
+        };
+
+        this.enemies.push(enemyData);
+      }
+
+      // Spawn Splitter Letter Mines (when Heavy Word is destroyed, exactly like ZType)
+      spawnLetterMines(originX, originY, count = 4) {
+        const letters = 'abcdefghijklmnopqrstuvwxyz';
+        for (let i = 0; i < count; i++) {
+          // Select unique single letter not already in active words
+          let char = '';
+          for (let attempt = 0; attempt < 15; attempt++) {
+            const candidate = letters[Phaser.Math.Between(0, letters.length - 1)];
+            if (!this.activeWordsSet.has(candidate)) {
+              char = candidate;
+              break;
+            }
+          }
+          if (!char) char = letters[Phaser.Math.Between(0, letters.length - 1)];
+          this.activeWordsSet.add(char);
+
+          // Typography sizing using FontManager settings
+          const fontSizeNum = FontManager.getFontSizeNumber();
+          const mineBoxDim = Math.max(30, Math.round(fontSizeNum * 1.35));
+
+          // Container for single-letter mine
+          const mineContainer = this.add.container(originX, originY).setDepth(12);
+
+          // Black rectangular badge for single letter
+          const bgBox = this.add.rectangle(0, 0, mineBoxDim, mineBoxDim, 0x000000, 1.0);
+          mineContainer.add(bgBox);
+
+          // Orange target drone attached to right edge
+          const drone = this.add.image(mineBoxDim / 2 + 9, 0, 'target_drone').setDepth(13);
+          mineContainer.add(drone);
+
+          // Mine single letter text in uniform font with dynamic size
+          const charText = this.add.text(0, 0, char, {
+            fontFamily: FontManager.getFontFamily(),
+            fontSize: FontManager.getFontSize(),
+            fontWeight: '600',
+            color: '#ffffff'
+          }).setOrigin(0.5);
+          mineContainer.add(charText);
+
+          // Arc burst ejection velocity
+          const angle = (Math.PI / (count + 1)) * (i + 1) + Math.PI / 2 + Phaser.Math.FloatBetween(-0.25, 0.25);
+          const spreadDist = Phaser.Math.Between(45, 90);
+          const targetX = Phaser.Math.Clamp(originX + Math.cos(angle) * spreadDist, 40, this.scale.width - 50);
+          const targetY = originY - Math.sin(angle) * spreadDist * 0.4;
+
+          this.tweens.add({
+            targets: mineContainer,
+            x: targetX,
+            y: targetY,
+            duration: 350,
+            ease: 'Back.easeOut'
+          });
+
+          // Metadata
+          const mineData = {
+            container: mineContainer,
+            drone: drone,
+            bgBox: bgBox,
+            letterObjects: [charText],
+            word: char,
+            typedIndex: 0,
+            speed: Phaser.Math.Between(85, 115) + (this.wave - 1) * 8.0,
+            baseScore: 100,
+            type: 'mine',
+            baseX: targetX,
+            swayAmplitude: Phaser.Math.Between(20, 35),
+            phase: Math.random() * Math.PI * 2,
+            isDestroyed: false,
+            isMine: true
+          };
+
+          this.enemies.push(mineData);
+        }
+      }
+
+      // Mechanic 4: Wave Boss (every 5th wave: Wave 5, 10, 15, etc.)
+      // Spawns exceptionally long boss word that moves slowly and fires small, fast missile words (2-3 letters)
+      spawnWaveBoss() {
+        if (this.isGameOver || this.isPaused) return;
+
+        const { width } = this.scale;
+        const bossWordsPool = [
+          'supercalifragilisticexpialidocious',
+          'electroencephalographic',
+          'pneumonoultramicroscopicsilicovolcanoconiosis',
+          'uncharacteristically',
+          'counterrevolutionary',
+          'incomprehensibility',
+          'dreadnoughtdestroyer',
+          'interchangeability',
+          'hyperdimensionalcore',
+          'antidisestablishmentarianism'
+        ];
+        let bossWord = bossWordsPool[(Math.floor(this.wave / 5) - 1) % bossWordsPool.length];
+        if (this.wave >= 8) {
+          bossWord = bossWord.charAt(0).toUpperCase() + bossWord.slice(1);
+        }
+        this.activeWordsSet.add(bossWord);
+
+        const isMono = FontManager.currentType === 'mono';
+        const fontSizeNum = FontManager.getFontSizeNumber();
+        const charWidth = isMono ? Math.round(fontSizeNum * 0.82) : Math.round(fontSizeNum * 0.76);
+        const totalWordWidth = bossWord.length * charWidth;
+        const boxW = totalWordWidth + Math.round(fontSizeNum * 1.2);
+        const boxH = Math.round(fontSizeNum * 1.7);
+        const startX = -totalWordWidth / 2 + charWidth / 2;
+        const cursorY = Math.round(boxH / 2 - 2);
+        const boundedX = width / 2;
+        const spawnY = -45;
+
+        const bossContainer = this.add.container(boundedX, spawnY).setDepth(15);
+
+        // Crimson & black armored boss badge
+        const bgBox = this.add.rectangle(0, 0, boxW, boxH, 0x110202, 1.0);
+        bgBox.setStrokeStyle(2, 0xff0044);
+        bossContainer.add(bgBox);
+
+        // Dual heavy red drone crests
+        const droneL = this.add.image(-boxW / 2 - 12, 0, 'target_drone').setDepth(16).setTint(0xff2244);
+        const droneR = this.add.image(boxW / 2 + 12, 0, 'target_drone').setDepth(16).setTint(0xff2244);
+        bossContainer.add(droneL);
+        bossContainer.add(droneR);
+
+        // Active letter cursor underline
+        const activeCursor = this.add.rectangle(0, cursorY, charWidth, 3, 0xff0055).setVisible(false);
+        bossContainer.add(activeCursor);
+
+        // Text objects with dynamic font size
+        const letterObjects = [];
+        for (let i = 0; i < bossWord.length; i++) {
+          const lx = startX + i * charWidth;
+          const charText = this.add.text(lx, 0, bossWord[i], {
+            fontFamily: FontManager.getFontFamily(),
+            fontSize: FontManager.getFontSize(),
+            fontWeight: 'bold',
+            color: '#ffffff'
+          }).setOrigin(0.5);
+
+          bossContainer.add(charText);
+          letterObjects.push(charText);
+        }
+
+        // Scaled speed for the boss
+        const bossSpeed = Math.max(22, 28 + (this.wave - 1) * 3.4);
+
+        const bossEnemy = {
+          container: bossContainer,
+          drone: droneR,
+          bgBox: bgBox,
+          activeCursor: activeCursor,
+          letterObjects: letterObjects,
+          charWidth: charWidth,
+          startX: startX,
+          word: bossWord,
+          typedIndex: 0,
+          speed: bossSpeed,
+          baseScore: 2500 + this.wave * 200,
+          type: 'boss',
+          baseX: boundedX,
+          swayAmplitude: 20,
+          phase: 0,
+          isDestroyed: false,
+          isBoss: true,
+          missiles: [],
+          missileTimer: null
+        };
+
+        // Periodic missile launcher: fires fast 2-3 letter missile words that protect the boss
+        const missileInterval = Math.max(1300, 3600 - (this.wave - 1) * 220);
+        bossEnemy.missileTimer = this.time.addEvent({
+          delay: missileInterval,
+          loop: true,
+          callback: () => {
+            if (bossEnemy.isDestroyed || this.isGameOver || this.isPaused) return;
+            this.spawnBossMissile(bossEnemy);
+          }
+        });
+
+        this.enemies.push(bossEnemy);
+        sound.bossHit();
+
+        // Initial missile volley
+        this.time.delayedCall(800, () => {
+          if (!bossEnemy.isDestroyed) this.spawnBossMissile(bossEnemy);
+        });
+      }
+
+      // Small, fast "missile words" (2-3 letter words) fired from Boss Word
+      spawnBossMissile(bossEnemy) {
+        if (!bossEnemy || bossEnemy.isDestroyed || this.isGameOver) return;
+
+        const missileWords = ['go', 'no', 'up', 'on', 'at', 'it', 'me', 'we', 'ox', 'by', 'run', 'hit', 'fly', 'aim', 'zap', 'hex', 'ray', 'fog', 'sky', 'war', 'ace', 'jet', 'ion'];
+        const existingInitialLetters = new Set(
+          this.enemies.filter(e => !e.isDestroyed).map(e => e.word[0])
+        );
+
+        let mWord = missileWords[Phaser.Math.Between(0, missileWords.length - 1)];
+        for (let i = 0; i < 10; i++) {
+          if (!this.activeWordsSet.has(mWord) && !existingInitialLetters.has(mWord[0])) {
+            break;
+          }
+          mWord = missileWords[Phaser.Math.Between(0, missileWords.length - 1)];
+        }
+        this.activeWordsSet.add(mWord);
+
+        const originX = bossEnemy.container.x;
+        const originY = bossEnemy.container.y + 15;
+
+        const isMono = FontManager.currentType === 'mono';
+        const fontSizeNum = FontManager.getFontSizeNumber();
+        const charWidth = isMono ? Math.round(fontSizeNum * 0.82) : Math.round(fontSizeNum * 0.76);
+        const totalWordWidth = mWord.length * charWidth;
+        const boxW = totalWordWidth + Math.round(fontSizeNum * 0.9);
+        const boxH = Math.round(fontSizeNum * 1.45);
+        const startX = -totalWordWidth / 2 + charWidth / 2;
+        const cursorY = Math.round(boxH / 2 - 2);
+
+        const missileContainer = this.add.container(originX, originY).setDepth(13);
+
+        const bgBox = this.add.rectangle(0, 0, boxW, boxH, 0x180000, 1.0);
+        bgBox.setStrokeStyle(1.5, 0xff3300);
+        missileContainer.add(bgBox);
+
+        const drone = this.add.image(boxW / 2 + 8, 0, 'target_drone').setDepth(14).setTint(0xff4400).setScale(0.85);
+        missileContainer.add(drone);
+
+        const activeCursor = this.add.rectangle(0, cursorY, charWidth, 2, 0xff4400).setVisible(false);
+        missileContainer.add(activeCursor);
+
+        const letterObjects = [];
+        for (let i = 0; i < mWord.length; i++) {
+          const lx = startX + i * charWidth;
+          const charText = this.add.text(lx, 0, mWord[i], {
+            fontFamily: FontManager.getFontFamily(),
+            fontSize: FontManager.getFontSize(),
+            fontWeight: 'bold',
+            color: '#ffffff'
+          }).setOrigin(0.5);
+
+          missileContainer.add(charText);
+          letterObjects.push(charText);
+        }
+
+        // Arc spread ejection
+        const spreadX = Phaser.Math.Between(-140, 140);
+        const targetX = Phaser.Math.Clamp(originX + spreadX, 50, this.scale.width - 50);
+        const targetY = originY + Phaser.Math.Between(20, 50);
+
+        this.tweens.add({
+          targets: missileContainer,
+          x: targetX,
+          y: targetY,
+          duration: 320,
+          ease: 'Cubic.easeOut'
+        });
+
+        // Fast descent speed for missile words, accelerating significantly on higher waves
+        const missileSpeed = Phaser.Math.Between(95, 130) + (this.wave - 1) * 8.5;
+
+        const missileData = {
+          container: missileContainer,
+          drone: drone,
+          bgBox: bgBox,
+          activeCursor: activeCursor,
+          letterObjects: letterObjects,
+          charWidth: charWidth,
+          startX: startX,
+          word: mWord,
+          typedIndex: 0,
+          speed: missileSpeed,
+          baseScore: 180,
+          type: 'missile',
+          baseX: targetX,
+          swayAmplitude: Phaser.Math.Between(20, 40),
+          phase: Math.random() * Math.PI * 2,
+          isDestroyed: false,
+          isMissile: true,
+          bossParent: bossEnemy
+        };
+
+        bossEnemy.missiles.push(missileData);
+        this.enemies.push(missileData);
+        sound.laser();
+      }
+
+      // Core Typing & Targeting Mechanics
+      handleKeyInput(key) {
+        this.totalKeystrokes++;
+
+        // Case 1: Already locked onto a target enemy
+        if (this.lockedEnemy && !this.lockedEnemy.isDestroyed) {
+          const expectedLetter = this.lockedEnemy.word[this.lockedEnemy.typedIndex];
+
+          if (key === expectedLetter) {
+            // Correct letter typed!
+            const letterObj = this.lockedEnemy.letterObjects[this.lockedEnemy.typedIndex];
+
+            this.correctKeystrokes++;
+            this.lockedEnemy.typedIndex++;
+            this.combo++;
+            this.streak++;
+            if (this.combo > this.maxCombo) this.maxCombo = this.combo;
+
+            // ZType Dynamic Multiplier (every 12 consecutive correct letters increments multiplier, up to 4x)
+            const newMultiplier = Math.min(4, 1 + Math.floor(this.streak / 12));
+            if (newMultiplier > this.multiplier) {
+              this.multiplier = newMultiplier;
+              this.showMultiplierUpgrade(newMultiplier);
+            }
+
+            // Play laser sound
+            sound.laser();
+
+            // Check if word completed
+            const isFinal = this.lockedEnemy.typedIndex >= this.lockedEnemy.word.length;
+            const targetEnemy = this.lockedEnemy;
+            if (isFinal) {
+              targetEnemy.isPendingDestroy = true;
+              this.lockedEnemy = null;
+              this.reticle.setVisible(false);
+            } else {
+              this.updateEnemyWordVisuals(targetEnemy);
+            }
+
+            // Fire laser directly at this exact letter!
+            this.fireLaserAtLetter(targetEnemy, letterObj, isFinal);
+
+            this.updateStats();
+            this.updateTargetHUD();
+          } else {
+            // Incorrect letter while locked onto target
+            this.handleTypingError();
+          }
+          return;
+        }
+
+        // Case 2: Not currently locked on. Find candidates whose first letter matches!
+        const matchingEnemies = this.enemies.filter(e => !e.isDestroyed && !e.isPendingDestroy && e.word[0] === key);
+
+        if (matchingEnemies.length > 0) {
+          // If multiple match, target the enemy lowest on screen (greatest proximity danger, as in ZType)
+          matchingEnemies.sort((a, b) => b.container.y - a.container.y);
+          const target = matchingEnemies[0];
+
+          // Lock on!
+          this.lockedEnemy = target;
+          const letterObj = target.letterObjects[0];
+          target.typedIndex = 1;
+
+          this.correctKeystrokes++;
+          this.combo++;
+          this.streak++;
+          if (this.combo > this.maxCombo) this.maxCombo = this.combo;
+
+          const newMultiplier = Math.min(4, 1 + Math.floor(this.streak / 12));
+          if (newMultiplier > this.multiplier) {
+            this.multiplier = newMultiplier;
+            this.showMultiplierUpgrade(newMultiplier);
+          }
+
+          sound.lock();
+          sound.laser();
+
+          const isFinal = target.typedIndex >= target.word.length;
+          if (isFinal) {
+            target.isPendingDestroy = true;
+            this.lockedEnemy = null;
+            this.reticle.setVisible(false);
+          } else {
+            this.reticle.setVisible(true);
+            this.updateEnemyWordVisuals(target);
+          }
+
+          this.fireLaserAtLetter(target, letterObj, isFinal);
+
+          this.updateStats();
+          this.updateTargetHUD();
+        } else {
+          // Typed a letter that matches no visible enemy
+          this.handleTypingError();
+        }
+      }
+
+      showMultiplierUpgrade(mult) {
+        const colors = { 2: '#38bdf8', 3: '#f59e0b', 4: '#f43f5e' };
+        const pop = this.add.text(this.playerX, this.playerY - 50, `${mult}X MULTIPLIER!`, {
+          fontFamily: FontManager.getFontFamily(),
+          fontSize: '22px',
+          fontWeight: '900',
+          color: colors[mult] || '#00f0ff',
+          stroke: '#000000',
+          strokeThickness: 3.5
+        }).setOrigin(0.5).setDepth(42);
+
+        this.tweens.add({
+          targets: pop,
+          y: this.playerY - 90,
+          scale: 1.2,
+          alpha: 0,
+          duration: 700,
+          ease: 'Cubic.easeOut',
+          onComplete: () => pop.destroy()
+        });
+      }
+
+      // Typing error feedback: reset streak & multiplier, subtle buzzer + reticle flash + active letter flash
+      handleTypingError() {
+        sound.error();
+        this.combo = 0;
+        this.streak = 0;
+        this.multiplier = 1;
+        this.updateStats();
+
+        // Flash reticle red if locked
+        if (this.lockedEnemy) {
+          this.reticle.setTint(0xef4444);
+          this.time.delayedCall(140, () => {
+            if (this.reticle) this.reticle.clearTint();
+          });
+
+          // Flash active character cursor red
+          if (this.lockedEnemy.activeCursor) {
+            this.lockedEnemy.activeCursor.setFillStyle(0xef4444);
+            this.time.delayedCall(160, () => {
+              if (this.lockedEnemy && this.lockedEnemy.activeCursor) {
+                this.lockedEnemy.activeCursor.setFillStyle(0x00f0ff);
+              }
+            });
+          }
+
+          // Subtle shake on the expected character
+          const currentLetterObj = this.lockedEnemy.letterObjects[this.lockedEnemy.typedIndex];
+          if (currentLetterObj) {
+            const origX = currentLetterObj.x;
+            this.tweens.add({
+              targets: currentLetterObj,
+              x: origX + Phaser.Math.Between(-3, 3),
+              duration: 35,
+              yoyo: true,
+              repeat: 2,
+              onComplete: () => {
+                if (currentLetterObj) currentLetterObj.x = origX;
+              }
+            });
+          }
+        }
+
+        // Subtle ship jiggle
+        this.tweens.add({
+          targets: this.playerShip,
+          x: this.playerX + Phaser.Math.Between(-4, 4),
+          duration: 40,
+          yoyo: true,
+          repeat: 2,
+          onComplete: () => {
+            this.playerShip.x = this.playerX;
+          }
+        });
+      }
+
+      // Update text styling for locked enemy (Screenshot 2: typed letters in red-orange, remaining in white)
+      updateEnemyWordVisuals(enemy) {
+        if (!enemy || enemy.isDestroyed) return;
+
+        // Position active cursor line right under the next letter
+        if (enemy.typedIndex < enemy.word.length) {
+          const nextLetterObj = enemy.letterObjects[enemy.typedIndex];
+          if (nextLetterObj && enemy.activeCursor) {
+            const cursorYOffset = Math.round(FontManager.getFontSizeNumber() * 0.58);
+            enemy.activeCursor.setPosition(nextLetterObj.x, nextLetterObj.y + cursorYOffset);
+            enemy.activeCursor.setVisible(true);
+          }
+        } else if (enemy.activeCursor) {
+          enemy.activeCursor.setVisible(false);
+        }
+
+        // Update each letter's styling
+        for (let i = 0; i < enemy.word.length; i++) {
+          const charObj = enemy.letterObjects[i];
+          if (!charObj) continue;
+
+          if (i < enemy.typedIndex) {
+            // Already typed: vibrant orange-red (Screenshot 2)
+            charObj.setColor('#ff4400');
+            charObj.setScale(1.0);
+          } else {
+            // Remaining untyped letters: crisp white
+            charObj.setColor('#ffffff');
+            charObj.setScale(1.0);
+          }
+        }
+      }
+
+      // Fire vibrant glowing white tracer needle directly at targeted letter (matching screenshot)
+      fireLaserAtLetter(target, letterObj, isFinalLetter = false) {
+        const letterLocalX = letterObj ? letterObj.x : 0;
+        const letterLocalY = letterObj ? letterObj.y : 0;
+        const endX = target.container.x + letterLocalX;
+        const endY = target.container.y + letterLocalY;
+
+        // Aim ship's nose directly toward targeted letter
+        const angle = Phaser.Math.Angle.Between(this.playerX, this.playerY, endX, endY);
+        this.playerShip.setRotation(angle + Math.PI / 2);
+
+        // Gun muzzle origin at the forward nose prongs
+        const noseDist = 22;
+        const startX = this.playerX + Math.cos(angle) * noseDist;
+        const startY = this.playerY + Math.sin(angle) * noseDist;
+
+        // Bright white/mint muzzle flash
+        const muzzle = this.add.circle(startX, startY, 5, 0xffffff, 1.0).setDepth(21);
+        const muzzleGlow = this.add.circle(startX, startY, 9, 0x34d399, 0.7).setDepth(20);
+        this.tweens.add({
+          targets: [muzzle, muzzleGlow],
+          scale: 0.2,
+          alpha: 0,
+          duration: 65,
+          onComplete: () => {
+            muzzle.destroy();
+            muzzleGlow.destroy();
+          }
+        });
+
+        // Supersonic glowing white tracer needle traveling along laser vector
+        const laser = this.add.image(startX, startY, 'laser_bolt')
+          .setDepth(18)
+          .setRotation(angle + Math.PI / 2);
+
+        const distance = Phaser.Math.Distance.Between(startX, startY, endX, endY);
+        const flightTime = Math.max(75, Math.min(160, (distance / 2200) * 1000));
+
+        this.tweens.add({
+          targets: laser,
+          x: endX,
+          y: endY,
+          duration: flightTime,
+          ease: 'Linear',
+          onComplete: () => {
+            laser.destroy();
+            // Intense white/orange fireball impact explosion (matching screenshot)
+            this.createImpactExplosion(endX, endY);
+            sound.hit();
+
+            // Vaporize the targeted letter on impact
+            if (letterObj && letterObj.active) {
+              letterObj.setVisible(false);
+            }
+
+            // If this was the final letter of the word, detonate enemy craft on impact
+            if (isFinalLetter && !target.isDestroyed) {
+              this.destroyEnemy(target);
+            }
+          }
+        });
+      }
+
+      // Authentic ZType Impact Explosion: Fiery white-hot core & yellow-orange fireball burst (matching screenshot)
+      createImpactExplosion(x, y) {
+        // 1. Intense pure white core flash
+        const coreFlash = this.add.circle(x, y, 14, 0xffffff, 1.0).setDepth(25);
+        this.tweens.add({
+          targets: coreFlash,
+          scale: 1.8,
+          alpha: 0,
+          duration: 110,
+          ease: 'Quad.easeOut',
+          onComplete: () => coreFlash.destroy()
+        });
+
+        // 2. Fiery warm yellow-orange blast orb (Screenshot fireball)
+        const fireball = this.add.circle(x, y, 18, 0xff8800, 0.95).setDepth(24);
+        this.tweens.add({
+          targets: fireball,
+          scale: 2.2,
+          alpha: 0,
+          duration: 180,
+          ease: 'Quad.easeOut',
+          onComplete: () => fireball.destroy()
+        });
+
+        // 3. Fiery outer amber halo
+        const halo = this.add.circle(x, y, 25, 0xffbb00, 0.6).setDepth(23);
+        this.tweens.add({
+          targets: halo,
+          scale: 2.6,
+          alpha: 0,
+          duration: 220,
+          ease: 'Quad.easeOut',
+          onComplete: () => halo.destroy()
+        });
+
+        // 4. Scattering burning embers & sparks (Screenshot)
+        for (let i = 0; i < 8; i++) {
+          const spark = this.add.image(x, y, 'spark').setDepth(26).setScale(Phaser.Math.FloatBetween(0.6, 1.1));
+          spark.setTint(i % 2 === 0 ? 0xffffff : 0xffaa00);
+          const angle = Phaser.Math.FloatBetween(0, Math.PI * 2);
+          const dist = Phaser.Math.Between(25, 75);
+          this.tweens.add({
+            targets: spark,
+            x: x + Math.cos(angle) * dist,
+            y: y + Math.sin(angle) * dist,
+            alpha: 0,
+            scale: 0.1,
+            duration: Phaser.Math.Between(160, 300),
+            ease: 'Quad.easeOut',
+            onComplete: () => spark.destroy()
+          });
+        }
+      }
+
+      // Destroy enemy with particle explosion, cruiser mine splitting, & floating score
+      destroyEnemy(enemy, isEmp = false) {
+        enemy.isDestroyed = true;
+        this.activeWordsSet.delete(enemy.word);
+        this.enemiesDestroyed++;
+
+        const x = enemy.container.x;
+        const y = enemy.container.y;
+
+        // Award points with ZType active multiplier
+        const points = Math.round((enemy.baseScore + enemy.word.length * 25) * this.multiplier);
+        this.score += points;
+
+        // Play explosion sound
+        sound.explosion();
+
+        // Camera shake
+        this.cameras.main.shake(120, 0.005);
+
+        // Particle explosion
+        this.createExplosionFX(x, y);
+
+        // Destroy container
+        enemy.container.destroy();
+
+        // Remove from list
+        this.enemies = this.enemies.filter(e => e !== enemy);
+
+        // Check if wave finished or schedule the next word
+        const activeCount = this.enemies.filter(e => !e.isDestroyed).length;
+        if (this.spawnQueue.length === 0 && activeCount === 0) {
+          this.checkWaveCompletion();
+        } else if (this.isSpawningWave && this.canSpawnNextWord()) {
+          this.scheduleNextWord(350);
+        }
+      }
+
+      createExplosionFX(x, y) {
+        // Expanding energy shockwave ring
+        const shockwave = this.add.circle(x, y, 12).setDepth(21);
+        shockwave.setStrokeStyle(2, 0x00f0ff, 0.9);
+
+        this.tweens.add({
+          targets: shockwave,
+          scale: 3.5,
+          alpha: 0,
+          duration: 350,
+          ease: 'Cubic.easeOut',
+          onComplete: () => shockwave.destroy()
+        });
+
+        // Debris particles
+        const colors = [0x00f0ff, 0x38bdf8, 0xf59e0b, 0xffffff];
+        for (let i = 0; i < 22; i++) {
+          const color = colors[i % colors.length];
+          const particle = this.add.circle(x, y, Phaser.Math.FloatBetween(2, 4), color).setDepth(22);
+          const angle = Phaser.Math.FloatBetween(0, Math.PI * 2);
+          const dist = Phaser.Math.Between(30, 95);
+
+          this.tweens.add({
+            targets: particle,
+            x: x + Math.cos(angle) * dist,
+            y: y + Math.sin(angle) * dist,
+            alpha: 0,
+            scale: 0.2,
+            duration: Phaser.Math.Between(250, 480),
+            ease: 'Quad.easeOut',
+            onComplete: () => particle.destroy()
+          });
+        }
+      }
+
+      createScorePopup(x, y, text, color = '#38bdf8') {
+        const popup = this.add.text(x, y - 10, text, {
+          fontFamily: FONT_MONO,
+          fontSize: '15px',
+          fontWeight: '900',
+          color: color,
+          stroke: '#000000',
+          strokeThickness: 3
+        }).setOrigin(0.5).setDepth(25);
+
+        this.tweens.add({
+          targets: popup,
+          y: y - 45,
+          alpha: 0,
+          duration: 650,
+          ease: 'Sine.easeOut',
+          onComplete: () => popup.destroy()
+        });
+      }
+
+      // Check if all enemies in the wave are destroyed
+      checkWaveCompletion() {
+        const activeCount = this.enemies.filter(e => !e.isDestroyed).length;
+        if (this.spawnQueue.length === 0 && activeCount === 0 && !this.isWaveClearing && !this.isGameOver) {
+          this.isSpawningWave = false;
+          this.isWaveClearing = true;
+          this.showWaveClearIntermission();
+        }
+      }
+
+      showWaveClearIntermission() {
+        sound.waveClear();
+
+        const { width, height } = this.scale;
+        const waveBonus = this.wave * 400;
+        this.score += waveBonus;
+        this.updateStats();
+
+        const waveNumPadded = String(this.wave).padStart(3, '0');
+        const clearBanner = this.add.text(width / 2, height / 2 - 20, `Wave ${waveNumPadded} Clear`, {
+          fontFamily: FONT_MONO,
+          fontSize: '34px',
+          fontWeight: 'bold',
+          color: '#ffffff',
+          letterSpacing: 2
+        }).setOrigin(0.5).setDepth(45).setAlpha(0).setScale(0.9);
+
+        this.tweens.add({
+          targets: clearBanner,
+          alpha: 1,
+          scale: 1,
+          duration: 280,
+          ease: 'Cubic.easeOut',
+          onComplete: () => {
+            this.time.delayedCall(1200, () => {
+              this.tweens.add({
+                targets: clearBanner,
+                alpha: 0,
+                scale: 1.08,
+                duration: 250,
+                ease: 'Sine.easeIn',
+                onComplete: () => {
+                  clearBanner.destroy();
+                  this.isWaveClearing = false;
+                  this.startWave(this.wave + 1);
+                }
+              });
+            });
+          }
+        });
+      }
+
+      // Handle enemy reaching baseline defense threshold (1 Life Sudden Death Survival)
+      handleEnemyBreach(enemy) {
+        if (this.isGameOver) return;
+        enemy.isDestroyed = true;
+        this.activeWordsSet.delete(enemy.word);
+
+        // Reset streak and multiplier on hull breach
+        this.combo = 0;
+        this.streak = 0;
+        this.multiplier = 1;
+        this.updateStats();
+
+        if (this.lockedEnemy === enemy) {
+          this.lockedEnemy = null;
+          this.reticle.setVisible(false);
+          this.updateTargetHUD();
+        }
+
+        const x = enemy.container.x;
+        const y = this.defenseBaselineY;
+
+        // Player survival: Any word crossing the defense line ends the game immediately!
+        this.lives = 0;
+        this.shield = 0;
+
+        sound.shieldHit();
+        this.cameras.main.shake(450, 0.035);
+
+        // Dramatic red flash on screen
+        this.cameras.main.flash(350, 239, 68, 68, true);
+
+        // Explosions at breach point and on player ship
+        this.createExplosionFX(x, y);
+        this.createExplosionFX(this.playerX, this.playerY);
+
+        // Destroy container
+        enemy.container.destroy();
+        this.enemies = this.enemies.filter(e => e !== enemy);
+
+        this.drawShieldDome();
+
+        // 1 Life Survival: Instant Game Over!
+        this.triggerGameOver(`WORD "${enemy.word}" REACHED BASELINE`, enemy.word);
+      }
+
+      updateShieldBar() {
+        if (!this.shieldBarFill || !this.shieldPercentText) return;
+        const width = (this.shield / 100) * 134;
+        this.shieldBarFill.width = Math.max(0, width);
+
+        let barColor = 0x00f0ff;
+        if (this.shield < 35) barColor = 0xef4444;
+        else if (this.shield < 70) barColor = 0xf59e0b;
+        this.shieldBarFill.setFillStyle(barColor);
+
+        this.shieldPercentText.setText(`${this.shield}%`);
+      }
+
+      updateStats() {
+        // Roll score
+        if (this.displayScore < this.score) {
+          this.displayScore = Math.min(this.score, this.displayScore + Math.ceil((this.score - this.displayScore) * 0.25));
+          if (this.scoreText) this.scoreText.setText(this.displayScore.toString().padStart(6, '0'));
+        }
+
+        // Live Accuracy
+        const accuracy = this.totalKeystrokes > 0
+          ? Math.round((this.correctKeystrokes / this.totalKeystrokes) * 100)
+          : 100;
+
+        // Live WPM
+        const elapsedMinutes = Math.max(0.1, (this.time.now - this.gameStartTime) / 60000);
+        const wpm = Math.round((this.correctKeystrokes / 5) / elapsedMinutes);
+
+        if (this.statsText) {
+          this.statsText.setText(`ACCURACY: ${accuracy}%  |  WPM: ${wpm}  |  STREAK: ${this.streak}`);
+        }
+
+        // Update Multiplier HUD
+        if (this.multiplierText) {
+          this.multiplierText.setText(`${this.multiplier}X`);
+          const colors = { 1: '#94a3b8', 2: '#38bdf8', 3: '#f59e0b', 4: '#f43f5e' };
+          this.multiplierText.setColor(colors[this.multiplier] || '#38bdf8');
+        }
+      }
+
+      updateTargetHUD() {
+        if (!this.targetHUD) return;
+        if (this.lockedEnemy && !this.lockedEnemy.isDestroyed) {
+          const word = this.lockedEnemy.word;
+          const idx = this.lockedEnemy.typedIndex;
+          const typed = word.substring(0, idx);
+          const nextChar = idx < word.length ? word[idx] : '';
+          const remaining = idx + 1 < word.length ? word.substring(idx + 1) : '';
+
+          this.targetHUD.setText(`${typed} >${nextChar}< ${remaining}`);
+          this.targetHUD.setColor('#38bdf8');
+        } else {
+          this.targetHUD.setText('');
+          // Reset ship rotation smoothly to facing up (0 rad)
+          if (this.playerShip) {
+            this.tweens.add({
+              targets: this.playerShip,
+              rotation: 0,
+              duration: 250,
+              ease: 'Sine.easeOut'
+            });
+          }
+        }
+      }
+
+      triggerGameOver(breachReason = 'DEFENSE PERIMETER BREACHED', breachWord = '') {
+        if (this.isGameOver) return;
+        this.isGameOver = true;
+
+        sound.gameOver();
+
+        // Massive ship destruction
+        this.createExplosionFX(this.playerX, this.playerY);
+        this.playerShip.setVisible(false);
+        this.shieldGfx.clear();
+        this.reticle.setVisible(false);
+
+        // Check High Score
+        const oldRecord = parseInt(localStorage.getItem('ashooter_highscore') || '0', 10);
+        const isNewRecord = this.score > oldRecord;
+        if (isNewRecord) {
+          localStorage.setItem('ashooter_highscore', this.score.toString());
+        }
+
+        const elapsedMinutes = Math.max(0.1, (this.time.now - this.gameStartTime) / 60000);
+        const finalWpm = Math.round((this.correctKeystrokes / 5) / elapsedMinutes);
+        const finalAccuracy = this.totalKeystrokes > 0
+          ? Math.round((this.correctKeystrokes / this.totalKeystrokes) * 100)
+          : 100;
+
+        const summaryStats = {
+          score: this.score,
+          wave: this.wave,
+          enemiesDestroyed: this.enemiesDestroyed,
+          wpm: finalWpm,
+          accuracy: finalAccuracy,
+          maxCombo: this.maxCombo,
+          empUsedCount: this.empUsedCount,
+          isNewRecord: isNewRecord,
+          breachReason: breachReason,
+          breachWord: breachWord
+        };
+
+        this.time.delayedCall(1100, () => {
+          this.cameras.main.fade(400, 3, 6, 17, false, (cam, progress) => {
+            if (progress === 1) {
+              this.scene.start('GameOverScene', summaryStats);
+            }
+          });
+        });
+      }
+
+      update(time, delta) {
+        if (this.isGameOver || this.isPaused) return;
+
+        this.idleTime += delta;
+        if (this.idleTime > 3000 && !this.isGuideVisible) {
+          if (this.guideText1) this.guideText1.setVisible(true);
+          if (this.guideText2) this.guideText2.setVisible(true);
+          this.isGuideVisible = true;
+        }
+
+        const dt = delta / 1000;
+
+        // Smooth score roll
+        if (this.displayScore < this.score) {
+          this.displayScore = Math.min(this.score, this.displayScore + Math.max(1, Math.ceil((this.score - this.displayScore) * 0.2)));
+          if (this.scoreText) this.scoreText.setText(this.displayScore.toString().padStart(6, '0'));
+        }
+
+        // Animate starfield (accelerates with waves for dynamic hyperdrive sensation)
+        const warpSpeedMult = 1 + Math.min(2.2, (this.wave - 1) * 0.14);
+        for (let i = 0; i < this.stars.length; i++) {
+          const s = this.stars[i];
+          s.obj.y += s.speed * warpSpeedMult * dt;
+          if (s.obj.y > this.scale.height) {
+            s.obj.y = 0;
+            s.obj.x = Phaser.Math.Between(0, this.scale.width);
+          }
+        }
+
+        // Update enemies position & flight maneuvers
+        for (let i = this.enemies.length - 1; i >= 0; i--) {
+          const enemy = this.enemies[i];
+          if (enemy.isDestroyed) continue;
+
+          // Descent speed
+          enemy.container.y += enemy.speed * dt;
+
+          // Gentle rotation on target drone (Screenshot 2)
+          if (enemy.drone) {
+            enemy.drone.rotation += 1.8 * dt;
+          }
+
+          // Sinusoidal evasive maneuvers for fighters and mines (frequency increases with waves)
+          if (enemy.swayAmplitude > 0) {
+            const swayFreq = 2.4 + Math.min(2.2, (this.wave - 1) * 0.16);
+            enemy.phase += swayFreq * dt;
+            enemy.container.x = Phaser.Math.Clamp(
+              enemy.baseX + Math.sin(enemy.phase) * enemy.swayAmplitude,
+              45,
+              this.scale.width - 45
+            );
+          }
+
+          // Check if breach (1 Life Sudden Death: Word reaches defense line)
+          if (enemy.container.y >= this.defenseBaselineY) {
+            this.handleEnemyBreach(enemy);
+            return;
+          }
+        }
+
+        // Pulse defense perimeter red if any untyped word is dangerously close (within 130px)
+        const nearThreat = this.enemies.some(e => !e.isDestroyed && (this.defenseBaselineY - e.container.y) < 130);
+        this.drawDefensePerimeter(nearThreat);
+
+        // Continuous pacing watchdog: check if wave is complete or if distance range allows next word
+        const activeEnemiesCount = this.enemies.filter(e => !e.isDestroyed).length;
+        if (this.spawnQueue.length === 0 && activeEnemiesCount === 0 && !this.isWaveClearing && !this.isGameOver) {
+          this.checkWaveCompletion();
+        } else if (this.canSpawnNextWord() && !this.isWaveClearing && !this.isGameOver) {
+          this.scheduleNextWord(300);
+        }
+
+        // Keep reticle tracking locked enemy's current active letter
+        if (this.lockedEnemy && !this.lockedEnemy.isDestroyed) {
+          const activeLetter = this.lockedEnemy.letterObjects[this.lockedEnemy.typedIndex];
+          const targetX = this.lockedEnemy.container.x + (activeLetter ? activeLetter.x : 0);
+          const targetY = this.lockedEnemy.container.y + (activeLetter ? activeLetter.y : 0);
+          this.reticle.setPosition(targetX, targetY);
+          this.reticle.rotation += 0.025;
+        }
+
+        // Smoothly realign ship upright when idle
+        if (!this.lockedEnemy) {
+          this.playerShip.rotation = Phaser.Math.Angle.RotateTo(
+            this.playerShip.rotation,
+            0,
+            0.06
+          );
+        }
+
+        // Animate ship engine thruster flame (emerald-mint matching ship theme)
+        this.thrusterGfx.clear();
+        if (this.playerShip.visible) {
+          const flameLength = Phaser.Math.Between(6, 13);
+          this.thrusterGfx.fillStyle(0x34d399, 0.85);
+          this.thrusterGfx.fillTriangle(
+            this.playerX - 5, this.playerY + 22,
+            this.playerX + 5, this.playerY + 22,
+            this.playerX, this.playerY + 22 + flameLength
+          );
+        }
+      }
+    }
+
+    // --------------------------------------------------------------------------
+    // 6. SCENE 4: GAME OVER SCREEN
+    // --------------------------------------------------------------------------
+    class GameOverScene extends Phaser.Scene {
+      constructor() {
+        super({ key: 'GameOverScene' });
+      }
+
+      init(data) {
+        this.stats = data || {
+          score: 0,
+          wave: 1,
+          enemiesDestroyed: 0,
+          wpm: 0,
+          accuracy: 100,
+          maxCombo: 0,
+          isNewRecord: false,
+          breachReason: '',
+          breachWord: ''
+        };
+      }
+
+      create() {
+        const { width, height } = this.scale;
+
+        // Universe background with photo of Earth from space
+        if (this.textures.exists('game_bg')) {
+          const bgImg = this.add.image(width / 2, height / 2, 'game_bg').setOrigin(0.5).setDepth(0);
+          const scale = Math.max(width / bgImg.width, height / bgImg.height);
+          bgImg.setScale(scale);
+
+          const overlay = this.add.graphics().setDepth(1);
+          overlay.fillStyle(0x020617, 0.50);
+          overlay.fillRect(0, 0, width, height);
+        } else {
+          // Tactical space grid background fallback
+          const gridGfx = this.add.graphics().setDepth(1);
+          gridGfx.lineStyle(1, 0x4488ff, 0.04);
+          const spacing = 38;
+          for (let x = 0; x < width; x += spacing) {
+            gridGfx.lineBetween(x, 0, x, height);
+          }
+          for (let y = 0; y < height; y += spacing) {
+            gridGfx.lineBetween(0, y, width, y);
+          }
+        }
+
+        // Starfield
+        for (let i = 0; i < 50; i++) {
+          const x = Phaser.Math.Between(0, width);
+          const y = Phaser.Math.Between(0, height);
+          this.add.circle(x, y, Phaser.Math.FloatBetween(1, 1.8), 0xffffff, Phaser.Math.FloatBetween(0.2, 0.6)).setDepth(2);
+        }
+
+        // Breach notification banner (1 Life Survival)
+        if (this.stats.breachReason) {
+          this.add.text(width / 2, 116, this.stats.breachReason, {
+            fontFamily: FONT_MONO,
+            fontSize: '16px',
+            fontWeight: '800',
+            color: '#ef4444',
+            letterSpacing: 2
+          }).setOrigin(0.5).setDepth(10);
+        }
+        if (this.stats.breachWord) {
+          this.add.text(width / 2, 142, `MISSED WORD: "${this.stats.breachWord}"`, {
+            fontFamily: FONT_MONO,
+            fontSize: '13px',
+            fontWeight: '700',
+            color: '#fca5a5',
+            letterSpacing: 1.5
+          }).setOrigin(0.5).setDepth(10);
+        }
+
+        // Layout metrics for two-column stats display (Screenshot 3, proportioned for 500px viewport)
+        const colW = 195;
+        const gap = 34;
+        const totalW = colW * 2 + gap;
+        const col1X = (width - totalW) / 2;
+        const col2X = col1X + colW + gap;
+
+        const row1Y = 185;
+        const row2Y = 295;
+
+        const linesGfx = this.add.graphics().setDepth(10);
+        linesGfx.lineStyle(2, 0x55aaff, 0.95);
+
+        // --- ROW 1: FINAL SCORE & YOU REACHED ---
+        // Col 1: FINAL SCORE
+        this.add.text(col1X, row1Y, 'FINAL SCORE', {
+          fontFamily: FONT_MONO,
+          fontSize: '13px',
+          color: '#778899',
+          letterSpacing: 1.2
+        }).setDepth(10);
+
+        const scoreFormatted = String(this.stats.score).padStart(6, '0');
+        this.add.text(col1X, row1Y + 20, scoreFormatted, {
+          fontFamily: FONT_MONO,
+          fontSize: '30px',
+          fontWeight: 'bold',
+          color: '#55aaff'
+        }).setDepth(10);
+
+        linesGfx.lineBetween(col1X, row1Y + 62, col1X + colW, row1Y + 62);
+
+        // Col 2: YOU REACHED
+        this.add.text(col2X, row1Y, 'YOU REACHED', {
+          fontFamily: FONT_MONO,
+          fontSize: '13px',
+          color: '#778899',
+          letterSpacing: 1.2
+        }).setDepth(10);
+
+        const waveFormatted = `WAVE ${String(this.stats.wave).padStart(3, '0')}`;
+        this.add.text(col2X, row1Y + 20, waveFormatted, {
+          fontFamily: FONT_MONO,
+          fontSize: '26px',
+          fontWeight: 'bold',
+          color: '#55aaff'
+        }).setDepth(10);
+
+        linesGfx.lineBetween(col2X, row1Y + 62, col2X + colW, row1Y + 62);
+
+        // --- ROW 2: ACCURACY & LONGEST STREAK ---
+        // Col 1: ACCURACY
+        this.add.text(col1X, row2Y, 'ACCURACY', {
+          fontFamily: FONT_MONO,
+          fontSize: '13px',
+          color: '#778899',
+          letterSpacing: 1.2
+        }).setDepth(10);
+
+        this.add.text(col1X, row2Y + 20, `${this.stats.accuracy}%`, {
+          fontFamily: FONT_MONO,
+          fontSize: '30px',
+          fontWeight: 'bold',
+          color: '#55aaff'
+        }).setDepth(10);
+
+        linesGfx.lineBetween(col1X, row2Y + 62, col1X + colW, row2Y + 62);
+
+        // Col 2: LONGEST STREAK
+        this.add.text(col2X, row2Y, 'LONGEST STREAK', {
+          fontFamily: FONT_MONO,
+          fontSize: '13px',
+          color: '#778899',
+          letterSpacing: 1.2
+        }).setDepth(10);
+
+        this.add.text(col2X, row2Y + 20, `${this.stats.maxCombo}`, {
+          fontFamily: FONT_MONO,
+          fontSize: '30px',
+          fontWeight: 'bold',
+          color: '#55aaff'
+        }).setDepth(10);
+
+        linesGfx.lineBetween(col2X, row2Y + 62, col2X + colW, row2Y + 62);
+
+        // Loading stats pulse text (Screenshot 3)
+        const loadingText = this.add.text(width / 2, 405, 'LOADING STATS ..', {
+          fontFamily: FONT_MONO,
+          fontSize: '14px',
+          color: '#4a6070',
+          letterSpacing: 2
+        }).setOrigin(0.5).setDepth(10);
+
+        this.tweens.add({
+          targets: loadingText,
+          alpha: 0.35,
+          duration: 700,
+          yoyo: true,
+          repeat: -1
+        });
+
+        // Bottom: "back to title" (Screenshot 3)
+        const backBtn = this.add.text(width / 2, height - 95, 'back to title', {
+          fontFamily: FONT_MONO,
+          fontSize: '25px',
+          fontWeight: 'bold',
+          color: '#ff7700'
+        }).setOrigin(0.5).setDepth(15).setInteractive({ useHandCursor: true });
+
+        backBtn.on('pointerover', () => {
+          backBtn.setColor('#ff9933');
+          backBtn.setScale(1.05);
+        });
+
+        backBtn.on('pointerout', () => {
+          backBtn.setColor('#ff7700');
+          backBtn.setScale(1.0);
+        });
+
+        let isLeavingGameOver = false;
+        const returnToMenu = () => {
+          if (isLeavingGameOver) return;
+          isLeavingGameOver = true;
+          try {
+            sound.init();
+            sound.lock();
+          } catch (e) {}
+          this.cameras.main.fadeOut(250, 3, 6, 17);
+          this.cameras.main.once('camerafadeoutcomplete', () => {
+            this.scene.start('MenuScene');
+          });
+        };
+
+        backBtn.on('pointerdown', returnToMenu);
+
+        this.input.keyboard.on('keydown', (event) => {
+          if (event.key === 'Enter' || event.key === ' ' || event.key === 'Escape') {
+            returnToMenu();
+          }
+        });
+      }
+    }
+
+    // --------------------------------------------------------------------------
+    // 6.5 AUTHENTIC ZTYPE CREDITS SCENE WITH EDITOR CREDENTIALS
+    // --------------------------------------------------------------------------
+    class CreditsScene extends Phaser.Scene {
+      constructor() {
+        super('CreditsScene');
+      }
+
+      init(data) {
+        this.returnTo = (data && data.returnTo) || 'MenuScene';
+      }
+
+      create() {
+        const { width, height } = this.scale;
+
+        // Background Nebula
+        if (this.textures.exists('game_bg')) {
+          this.add.image(width / 2, height / 2, 'game_bg')
+            .setDisplaySize(width, height)
+            .setAlpha(0.28)
+            .setDepth(0);
+        }
+
+        // Tactical Space Grid fallback
+        const gridGfx = this.add.graphics().setDepth(0);
+        gridGfx.lineStyle(1, 0x00ffc8, 0.04);
+        for (let x = 0; x < width; x += 38) {
+          gridGfx.lineBetween(x, 0, x, height);
+        }
+        for (let y = 0; y < height; y += 38) {
+          gridGfx.lineBetween(0, y, width, y);
+        }
+
+        // Drifting stars (ZType starfield)
+        this.stars = [];
+        for (let i = 0; i < 50; i++) {
+          const x = Phaser.Math.Between(0, width);
+          const y = Phaser.Math.Between(0, height);
+          const size = Phaser.Math.FloatBetween(0.8, 2.0);
+          const speed = size * 0.4;
+          const star = this.add.circle(x, y, size, 0xffffff, Phaser.Math.FloatBetween(0.3, 0.85)).setDepth(2);
+          this.stars.push({ obj: star, speed });
+        }
+
+        const getEditorInfo = () => {
+          const savedName = localStorage.getItem('ashooter_editor_name');
+          return {
+            name: (!savedName || savedName === 'Paul Duskon') ? 'dush_dev' : savedName,
+            email: localStorage.getItem('ashooter_editor_email') || 'duskonpaul@gmail.com',
+            role: localStorage.getItem('ashooter_editor_role') || 'GAME DESIGN, PROGRAMMING'
+          };
+        };
+
+        // Left alignment margin proportioned for 650x800 canvas
+        const leftX = Math.round(width * 0.09);
+
+        // 1. Header: CREDITS (Increased font size)
+        this.add.text(leftX, 42, 'CREDITS', {
+          fontFamily: FONT_CREDITS,
+          fontSize: '48px',
+          fontWeight: '600',
+          color: '#ffffff',
+          letterSpacing: 3
+        }).setOrigin(0, 0).setDepth(10);
+
+        // Section 1: CONCEPT, GRAPHICS & PROGRAMMING (dush_dev)
+        const sec1Y = 118;
+        this.roleLabel = this.add.text(leftX, sec1Y, 'CONCEPT, GRAPHICS & PROGRAMMING', {
+          fontFamily: FONT_CREDITS,
+          fontSize: '17px',
+          fontWeight: '600',
+          color: '#00f5d4',
+          letterSpacing: 1.4
+        }).setOrigin(0, 0).setDepth(10);
+
+        this.nameText = this.add.text(leftX, sec1Y + 28, getEditorInfo().name, {
+          fontFamily: FONT_CREDITS,
+          fontSize: '28px',
+          fontWeight: '500',
+          color: '#ffffff',
+          letterSpacing: 0.6
+        }).setOrigin(0, 0).setDepth(10).setInteractive({ useHandCursor: true });
+
+        this.emailText = this.add.text(leftX, sec1Y + 64, getEditorInfo().email, {
+          fontFamily: FONT_CREDITS,
+          fontSize: '20px',
+          fontWeight: '400',
+          color: '#ffffff',
+          letterSpacing: 0.5
+        }).setOrigin(0, 0).setDepth(10).setInteractive({ useHandCursor: true });
+
+        // Hover & click on Name/Email to copy and edit credentials
+        this.nameText.on('pointerover', () => {
+          this.nameText.setColor('#00f5d4');
+        });
+        this.nameText.on('pointerout', () => {
+          this.nameText.setColor('#ffffff');
+        });
+        this.nameText.on('pointerdown', () => {
+          sound.lock();
+          openEditorCredentialsModal(this, (name, email, role) => {
+            this.nameText.setText(name);
+            this.emailText.setText(email);
+          });
+        });
+
+        this.emailText.on('pointerover', () => {
+          this.emailText.setColor('#00f5d4');
+        });
+        this.emailText.on('pointerout', () => {
+          this.emailText.setColor('#ffffff');
+        });
+        this.emailText.on('pointerdown', () => {
+          sound.lock();
+          try {
+            navigator.clipboard.writeText(getEditorInfo().email);
+            const copiedToast = this.add.text(leftX + this.emailText.width + 14, sec1Y + 66, '✓ COPIED', {
+              fontFamily: FONT_CREDITS,
+              fontSize: '16px',
+              fontWeight: '600',
+              color: '#34d399'
+            }).setOrigin(0, 0).setDepth(20);
+            this.time.delayedCall(1600, () => copiedToast.destroy());
+          } catch(e) {}
+        });
+
+        // Subtle edit prompt
+        const editBtn = this.add.text(leftX, sec1Y + 96, '✎ click name/email to edit credentials', {
+          fontFamily: FONT_CREDITS,
+          fontSize: '14px',
+          fontWeight: '400',
+          color: '#94a3b8'
+        }).setOrigin(0, 0).setDepth(10).setInteractive({ useHandCursor: true });
+
+        editBtn.on('pointerover', () => {
+          editBtn.setColor('#00f5d4');
+        });
+        editBtn.on('pointerout', () => {
+          editBtn.setColor('#94a3b8');
+        });
+        editBtn.on('pointerdown', () => {
+          sound.lock();
+          openEditorCredentialsModal(this, (name, email, role) => {
+            this.nameText.setText(name);
+            this.emailText.setText(email);
+          });
+        });
+
+        // Section 2: UX & ADDITIONAL DESIGN (Norbert & figma)
+        const sec2Y = 252;
+        this.add.text(leftX, sec2Y, 'UX & ADDITIONAL DESIGN', {
+          fontFamily: FONT_CREDITS,
+          fontSize: '17px',
+          fontWeight: '600',
+          color: '#00f5d4',
+          letterSpacing: 1.4
+        }).setOrigin(0, 0).setDepth(10);
+
+        this.add.text(leftX, sec2Y + 28, 'Norbert', {
+          fontFamily: FONT_CREDITS,
+          fontSize: '28px',
+          fontWeight: '500',
+          color: '#ffffff',
+          letterSpacing: 0.6
+        }).setOrigin(0, 0).setDepth(10);
+
+        this.add.text(leftX, sec2Y + 64, 'figma', {
+          fontFamily: FONT_CREDITS,
+          fontSize: '20px',
+          fontWeight: '400',
+          color: '#ffffff',
+          letterSpacing: 0.5
+        }).setOrigin(0, 0).setDepth(10);
+
+        // Section 3: MUSIC (Furaha)
+        const sec3Y = 366;
+        this.add.text(leftX, sec3Y, 'MUSIC', {
+          fontFamily: FONT_CREDITS,
+          fontSize: '17px',
+          fontWeight: '600',
+          color: '#00f5d4',
+          letterSpacing: 1.4
+        }).setOrigin(0, 0).setDepth(10);
+
+        this.add.text(leftX, sec3Y + 28, 'Furaha', {
+          fontFamily: FONT_CREDITS,
+          fontSize: '28px',
+          fontWeight: '500',
+          color: '#ffffff',
+          letterSpacing: 0.6
+        }).setOrigin(0, 0).setDepth(10);
+
+        // Section 4: Engine (Dushi)
+        const sec4Y = 456;
+        this.add.text(leftX, sec4Y, 'ORIGINAL CONCEPT & ENGINE', {
+          fontFamily: FONT_CREDITS,
+          fontSize: '17px',
+          fontWeight: '600',
+          color: '#00f5d4',
+          letterSpacing: 1.4
+        }).setOrigin(0, 0).setDepth(10);
+
+        this.add.text(leftX, sec4Y + 28, 'Dushi', {
+          fontFamily: FONT_CREDITS,
+          fontSize: '28px',
+          fontWeight: '500',
+          color: '#ffffff',
+          letterSpacing: 0.6
+        }).setOrigin(0, 0).setDepth(10);
+
+        // Section 5: Tagline (Centered)
+        const sec5Y = 575;
+        this.add.text(width / 2, sec5Y, 'Made in Rwanda, Gihara ❤', {
+          fontFamily: FONT_CREDITS,
+          fontSize: '24px',
+          fontWeight: '500',
+          color: '#ffffff',
+          letterSpacing: 0.8
+        }).setOrigin(0.5, 0).setDepth(10);
+
+        // 6. Return / "back to title" Button
+        let isReturning = false;
+        const returnAction = () => {
+          if (isReturning) return;
+          isReturning = true;
+          try {
+            sound.init();
+            sound.lock();
+          } catch (e) {}
+          this.cameras.main.fadeOut(220, 3, 6, 17);
+          this.cameras.main.once('camerafadeoutcomplete', () => {
+            this.scene.start(this.returnTo || 'MenuScene');
+          });
+        };
+
+        const backBtn = this.add.text(width / 2, 645, 'back to title', {
+          fontFamily: FONT_CREDITS,
+          fontSize: '34px',
+          fontWeight: '500',
+          color: '#e67e22',
+          letterSpacing: 1.2
+        }).setOrigin(0.5, 0).setDepth(15).setInteractive({ useHandCursor: true });
+
+        backBtn.on('pointerover', () => {
+          backBtn.setColor('#ffa500');
+          backBtn.setScale(1.04);
+        });
+        backBtn.on('pointerout', () => {
+          backBtn.setColor('#e67e22');
+          backBtn.setScale(1.0);
+        });
+        backBtn.on('pointerdown', returnAction);
+
+        this.add.text(width / 2, 704, 'press ESC or click to return', {
+          fontFamily: FONT_CREDITS,
+          fontSize: '15px',
+          fontWeight: '400',
+          color: '#94a3b8'
+        }).setOrigin(0.5, 0).setDepth(10);
+
+        this.input.keyboard.on('keydown', (event) => {
+          if (event.key === 'Escape' || event.key === 'Enter' || event.key === ' ' || (event.key && event.key.toLowerCase() === 'b')) {
+            returnAction();
+          }
+        });
+      }
+
+      update(time, delta) {
+        const dt = delta / 1000;
+        if (this.stars && Array.isArray(this.stars)) {
+          for (let i = 0; i < this.stars.length; i++) {
+            const s = this.stars[i];
+            if (s && s.obj && s.obj.active) {
+              s.obj.y += (s.speed || 1) * 60 * dt;
+              if (s.obj.y > (this.scale ? this.scale.height : 800)) {
+                s.obj.y = 0;
+                s.obj.x = Phaser.Math.Between(0, this.scale ? this.scale.width : 650);
+              }
+            }
+          }
+        }
+      }
+    }
+
+    // --------------------------------------------------------------------------
+    // 7. PHASER GAME CONFIGURATION & INITIALIZATION
+    // Playground Dimensions: 650px × 800px (Centered in Viewport)
+    // --------------------------------------------------------------------------
+    const config = {
+      type: Phaser.AUTO,
+      parent: 'game-container',
+      width: 650,
+      height: 800,
+      backgroundColor: '#030611',
+      scale: {
+        mode: Phaser.Scale.FIT,
+        autoCenter: Phaser.Scale.NO_CENTER
+      },
+      scene: [BootScene, MenuScene, GameScene, GameOverScene, CreditsScene]
+    };
+
+    let game = null;
+
+    window.addEventListener('DOMContentLoaded', () => {
+      game = new Phaser.Game(config);
+
+      // Global audio unlock on first user interaction
+      const unlockAudio = () => {
+        sound.init();
+        window.removeEventListener('pointerdown', unlockAudio);
+        window.removeEventListener('keydown', unlockAudio);
+      };
+      window.addEventListener('pointerdown', unlockAudio);
+      window.addEventListener('keydown', unlockAudio);
+    });
+  </script>
+</body>
+</html>
