@@ -1,0 +1,13 @@
+# robots.txt for Ashoter (by dushi_dev)
+# Production Domain: https://ashooter.vercel.app/
+
+User-agent: *
+Allow: /
+
+User-agent: Googlebot
+Allow: /
+
+User-agent: Googlebot-Image
+Allow: /
+
+Sitemap: https://ashooter.vercel.app/sitemap.xml

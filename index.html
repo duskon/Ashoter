@@ -2,13 +2,90 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>Ashooter - Space Typing Shooter</title>
-  <meta name="description" content="A web-based typing space shooter game inspired by ZType, built with Phaser 3." />
-  <meta property="og:title" content="Ashooter - Space Typing Shooter" />
-  <meta property="og:description" content="A web-based typing space shooter game inspired by ZType, built with Phaser 3." />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <!-- =====================================================================
+       GOOGLE SEARCH CONSOLE & SEARCH ENGINE CRAWLER CONFIGURATION
+       Replace content below with your Google Search Console verification code
+       ===================================================================== -->
+  <meta name="google-site-verification" content="PASTE_YOUR_GOOGLE_SEARCH_CONSOLE_VERIFICATION_CODE_HERE" />
+  <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" />
+  <meta name="googlebot" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" />
+
+  <!-- Primary Branded SEO Title (30–60 chars) & Meta Description (120–160 chars) -->
+  <title>Ashoter – Space Typing Arcade Shooter Game | dushi_dev</title>
+  <meta name="description" content="Play Ashoter by dushi_dev, a fast-paced 3D space typing arcade shooter game. Destroy incoming word waves, load custom text, and test your typing speed online." />
+  <meta name="keywords" content="Ashoter, Ashooter, space typing shooter, typing game, ZType, typing speed test, arcade typing game, dushi_dev, dush_dev, browser typing game" />
+  <meta name="author" content="dushi_dev (dush_dev)" />
+  <meta name="application-name" content="Ashoter" />
+  <meta name="theme-color" content="#07080b" />
+  <meta name="color-scheme" content="dark" />
+
+  <!-- Canonical URL & Sitemap Reference -->
+  <link rel="canonical" id="canonical-url" href="https://ashooter.vercel.app/" />
+  <link rel="sitemap" type="application/xml" title="Sitemap" href="/sitemap.xml" />
+  <link rel="manifest" href="/site.webmanifest" />
+
+  <!-- OpenGraph Social Sharing Cards -->
   <meta property="og:type" content="website" />
-  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 96 96'%3E%3Crect width='96' height='96' rx='18' fill='%23070912'/%3E%3Cdefs%3E%3ClinearGradient id='rim' x1='0' y1='10' x2='0' y2='82' gradientUnits='userSpaceOnUse'%3E%3Cstop offset='0%25' stop-color='%234affff'/%3E%3Cstop offset='35%25' stop-color='%2323d5d8'/%3E%3Cstop offset='100%25' stop-color='%2318929f'/%3E%3C/linearGradient%3E%3CradialGradient id='core' cx='48' cy='42' r='22' gradientUnits='userSpaceOnUse'%3E%3Cstop offset='0%25' stop-color='%2329c4d2'/%3E%3Cstop offset='65%25' stop-color='%230e5865'/%3E%3Cstop offset='100%25' stop-color='%23062e37'/%3E%3C/radialGradient%3E%3C/defs%3E%3Crect x='42' y='11' width='12' height='13' rx='1' fill='%23d8e6ee'/%3E%3Cpath d='M48 12 L84 59 L79 74 L63 68 L56 79 Q48 74 40 79 L33 68 L17 74 L12 59 Z' fill='url(%23rim)'/%3E%3Cpath d='M48 23 L76 58 L73 67 L61 62 L54 72 Q48 67 42 72 L35 62 L23 67 L20 58 Z' fill='%2304232c'/%3E%3Cpolygon points='48,23 23,56 38,61' fill='%23167f8b'/%3E%3Cpolygon points='48,23 73,56 58,61' fill='%23167f8b'/%3E%3Cpolygon points='48,23 56,48 48,57 40,48' fill='url(%23core)'/%3E%3Cpolygon points='40,48 48,57 56,48 58,61 48,66 38,61' fill='%23083b46'/%3E%3C/svg%3E" />
+  <meta property="og:site_name" content="Ashoter" />
+  <meta property="og:locale" content="en_US" />
+  <meta property="og:url" id="og-url" content="https://ashooter.vercel.app/" />
+  <meta property="og:title" content="Ashoter – Space Typing Arcade Shooter Game | dushi_dev" />
+  <meta property="og:description" content="Play Ashoter by dushi_dev, a fast-paced 3D space typing arcade shooter game. Destroy incoming word waves, load custom text, and test your typing speed online." />
+  <meta property="og:image" content="https://ashooter.vercel.app/og-image.svg" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
+  <meta property="og:image:alt" content="Ashoter – Space Typing Arcade Shooter Game by dushi_dev" />
+
+  <!-- Twitter / X Large Summary Card -->
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="Ashoter – Space Typing Arcade Shooter Game | dushi_dev" />
+  <meta name="twitter:description" content="Play Ashoter by dushi_dev, a fast-paced 3D space typing arcade shooter game. Destroy incoming word waves, load custom text, and test your typing speed online." />
+  <meta name="twitter:image" content="https://ashooter.vercel.app/og-image.svg" />
+  <meta name="twitter:creator" content="@dushi_dev" />
+
+  <!-- Favicons for Google Search Results & Browsers -->
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  <link rel="alternate icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 96 96'%3E%3Crect width='96' height='96' rx='18' fill='%23070912'/%3E%3Cdefs%3E%3ClinearGradient id='rim' x1='0' y1='10' x2='0' y2='82' gradientUnits='userSpaceOnUse'%3E%3Cstop offset='0%25' stop-color='%234affff'/%3E%3Cstop offset='35%25' stop-color='%2323d5d8'/%3E%3Cstop offset='100%25' stop-color='%2318929f'/%3E%3C/linearGradient%3E%3CradialGradient id='core' cx='48' cy='42' r='22' gradientUnits='userSpaceOnUse'%3E%3Cstop offset='0%25' stop-color='%2329c4d2'/%3E%3Cstop offset='65%25' stop-color='%230e5865'/%3E%3Cstop offset='100%25' stop-color='%23062e37'/%3E%3C/radialGradient%3E%3C/defs%3E%3Crect x='42' y='11' width='12' height='13' rx='1' fill='%23d8e6ee'/%3E%3Cpath d='M48 12 L84 59 L79 74 L63 68 L56 79 Q48 74 40 79 L33 68 L17 74 L12 59 Z' fill='url(%23rim)'/%3E%3Cpath d='M48 23 L76 58 L73 67 L61 62 L54 72 Q48 67 42 72 L35 62 L23 67 L20 58 Z' fill='%2304232c'/%3E%3Cpolygon points='48,23 23,56 38,61' fill='%23167f8b'/%3E%3Cpolygon points='48,23 73,56 58,61' fill='%23167f8b'/%3E%3Cpolygon points='48,23 56,48 48,57 40,48' fill='url(%23core)'/%3E%3Cpolygon points='40,48 48,57 56,48 58,61 48,66 38,61' fill='%23083b46'/%3E%3C/svg%3E" />
+  <link rel="apple-touch-icon" href="/favicon.svg" />
+
+  <!-- Schema.org Structured Data (JSON-LD) for Google Rich Results -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": ["VideoGame", "WebApplication"],
+    "name": "Ashoter",
+    "alternateName": "Ashooter Space Typing Shooter",
+    "url": "https://ashooter.vercel.app/",
+    "image": "https://ashooter.vercel.app/og-image.svg",
+    "description": "Play Ashoter by dushi_dev, a fast-paced 3D space typing arcade shooter game. Destroy incoming word waves, load custom text, and test your typing speed online.",
+    "applicationCategory": "GameApplication",
+    "applicationSubCategory": "Arcade Typing Game",
+    "genre": ["Arcade", "Typing Game", "Space Shooter", "Educational Game"],
+    "gamePlatform": ["Web Browser", "Desktop", "HTML5"],
+    "operatingSystem": "All",
+    "playMode": "SinglePlayer",
+    "inLanguage": "en",
+    "author": {
+      "@type": "Person",
+      "name": "dushi_dev",
+      "alternateName": "dush_dev",
+      "email": "duskonpaul@gmail.com"
+    },
+    "creator": {
+      "@type": "Person",
+      "name": "dushi_dev"
+    },
+    "offers": {
+      "@type": "Offer",
+      "price": "0",
+      "priceCurrency": "USD",
+      "availability": "https://schema.org/InStock"
+    }
+  }
+  </script>
+
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Arimo:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Fira+Code:wght@400;500;600;700&family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400&family=Roboto+Mono:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Space+Mono:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet" />
@@ -35,6 +112,21 @@
       align-items: center;
       justify-content: center;
       position: relative;
+      touch-action: manipulation;
+    }
+
+    /* Visually hidden semantic content for Googlebot & screen readers */
+    .sr-only-seo {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border: 0;
+      pointer-events: none;
     }
 
     /* Ambient CRT / Space Glow background */
@@ -72,8 +164,23 @@
   </style>
 </head>
 <body>
+  <!-- Semantic crawlable HTML for Google Search Console indexing -->
+  <main class="sr-only-seo">
+    <h1>Ashoter – Space Typing Arcade Shooter Game by dushi_dev</h1>
+    <p>Play Ashoter online, a fast-paced 3D space typing arcade shooter game inspired by ZType and developed by dushi_dev (dush_dev). Defend your stealth fighter against waves of incoming enemy words by typing accurately and rapidly.</p>
+    <h2>Key Features</h2>
+    <ul>
+      <li>Progressive Enemy Waves: Battle through Wave 001, Wave 002, and beyond with carrier ships, fragments, and boss encounters.</li>
+      <li>Load Your Own Text: Practice typing with custom passages, code snippets, or study notes.</li>
+      <li>Real-Time Typing Stats: Track final score, wave reached, typing accuracy percentage, and longest streak.</li>
+      <li>Customizable Settings: Adjust synthesized Web Audio laser sound effects, ambient space music, and word font sizes.</li>
+    </ul>
+    <h2>Credits</h2>
+    <p>Concept, Graphics &amp; Programming: dush_dev (dushi_dev) — duskonpaul@gmail.com. UX &amp; Additional Design: Norbert (Figma). Music: Furaha. Original Concept &amp; Engine: Dushi. Made in Rwanda, Gihara.</p>
+  </main>
+
   <div id="ambient-bg"></div>
-  <div id="game-container"></div>
+  <div id="game-container" role="application" aria-label="Ashoter Space Typing Shooter Game"></div>
   <!-- Hidden element forcing early web font rasterization before Phaser canvas creates text -->
   <div id="font-preloader" style="position:absolute;left:-9999px;top:-9999px;visibility:hidden;font-size:32px;pointer-events:none;" aria-hidden="true">
     <span style="font-family:'JetBrains Mono',monospace;font-weight:400;">font preload abcdefghijklmnopqrstuvwxyz 0123456789</span>
@@ -128,6 +235,164 @@
         this.currentSize = sizes[nextIdx];
         localStorage.setItem('ashooter_font_size', this.currentSize);
         return this.currentSize;
+      }
+    };
+
+    // --------------------------------------------------------------------------
+    // 0.5 USER PROGRESS & STANDARD STATS MANAGER (Persistent LocalStorage)
+    // --------------------------------------------------------------------------
+    const PILOT_RANKS = [
+      { level: 1, title: 'CADET', minXp: 0, color: '#a1a1aa' },
+      { level: 2, title: 'ENSIGN', minXp: 2000, color: '#34d399' },
+      { level: 3, title: 'PILOT', minXp: 5500, color: '#38bdf8' },
+      { level: 4, title: 'LIEUTENANT', minXp: 11000, color: '#60a5fa' },
+      { level: 5, title: 'COMMANDER', minXp: 20000, color: '#fbbf24' },
+      { level: 6, title: 'CAPTAIN', minXp: 35000, color: '#f59e0b' },
+      { level: 7, title: 'ACE PILOT', minXp: 55000, color: '#ff8800' },
+      { level: 8, title: 'FLEET ADMIRAL', minXp: 85000, color: '#f43f5e' }
+    ];
+
+    const UserProgressManager = {
+      storageKey: 'ashooter_user_progress',
+
+      getDefaultData() {
+        const legacyHs = parseInt(localStorage.getItem('ashooter_highscore') || '0', 10);
+        return {
+          highScore: legacyHs,
+          bestWave: legacyHs > 0 ? 1 : 0,
+          bestStreak: 0,
+          bestWpm: 0,
+          totalGames: 0,
+          totalWavesCleared: 0,
+          totalWordsDestroyed: 0,
+          totalKeystrokes: 0,
+          correctKeystrokes: 0,
+          totalScoreEarned: legacyHs,
+          lastRun: null,
+          history: []
+        };
+      },
+
+      load() {
+        try {
+          const raw = localStorage.getItem(this.storageKey);
+          const defaults = this.getDefaultData();
+          if (!raw) return defaults;
+          const parsed = JSON.parse(raw);
+          const legacyHs = parseInt(localStorage.getItem('ashooter_highscore') || '0', 10);
+          return {
+            ...defaults,
+            ...parsed,
+            highScore: Math.max(defaults.highScore, parsed.highScore || 0, legacyHs),
+            history: Array.isArray(parsed.history) ? parsed.history : []
+          };
+        } catch (e) {
+          return this.getDefaultData();
+        }
+      },
+
+      save(data) {
+        try {
+          localStorage.setItem(this.storageKey, JSON.stringify(data));
+          localStorage.setItem('ashooter_highscore', String(data.highScore || 0));
+        } catch (e) {}
+      },
+
+      recordWaveClear(waveNum, currentScore) {
+        const data = this.load();
+        data.totalWavesCleared = (data.totalWavesCleared || 0) + 1;
+        data.bestWave = Math.max(data.bestWave || 0, waveNum + 1);
+        if (currentScore > data.highScore) {
+          data.highScore = currentScore;
+        }
+        this.save(data);
+      },
+
+      recordSession(session) {
+        const data = this.load();
+        const score = Math.max(0, session.score || 0);
+        const wave = Math.max(1, session.wave || 1);
+        const wordsDestroyed = Math.max(0, session.enemiesDestroyed || 0);
+        const wpm = Math.max(0, session.wpm || 0);
+        const accuracy = Math.min(100, Math.max(0, session.accuracy ?? 100));
+        const maxCombo = Math.max(0, session.maxCombo || 0);
+        const totalKeys = Math.max(0, session.totalKeystrokes || 0);
+        const correctKeys = Math.max(0, session.correctKeystrokes || 0);
+
+        data.highScore = Math.max(data.highScore || 0, score);
+        data.bestWave = Math.max(data.bestWave || 0, wave);
+        data.bestStreak = Math.max(data.bestStreak || 0, maxCombo);
+        data.bestWpm = Math.max(data.bestWpm || 0, wpm);
+        data.totalGames = (data.totalGames || 0) + 1;
+        data.totalWordsDestroyed = (data.totalWordsDestroyed || 0) + wordsDestroyed;
+        data.totalKeystrokes = (data.totalKeystrokes || 0) + totalKeys;
+        data.correctKeystrokes = (data.correctKeystrokes || 0) + correctKeys;
+        data.totalScoreEarned = (data.totalScoreEarned || 0) + score;
+
+        const runEntry = {
+          score,
+          wave,
+          wpm,
+          accuracy,
+          streak: maxCombo,
+          wordsDestroyed,
+          timestamp: Date.now()
+        };
+
+        data.lastRun = runEntry;
+        data.history = [runEntry, ...(data.history || [])].slice(0, 8);
+        this.save(data);
+        return data;
+      },
+
+      getComputedStats() {
+        const data = this.load();
+        const avgAccuracy = data.totalKeystrokes > 0
+          ? Math.round((data.correctKeystrokes / data.totalKeystrokes) * 100)
+          : (data.lastRun ? data.lastRun.accuracy : 100);
+
+        // Calculate XP from total score, waves cleared, and words destroyed
+        const xp = (data.totalScoreEarned || 0) + (data.totalWavesCleared || 0) * 500 + (data.totalWordsDestroyed || 0) * 30;
+
+        let currentRank = PILOT_RANKS[0];
+        let nextRank = PILOT_RANKS[1];
+        for (let i = 0; i < PILOT_RANKS.length; i++) {
+          if (xp >= PILOT_RANKS[i].minXp) {
+            currentRank = PILOT_RANKS[i];
+            nextRank = PILOT_RANKS[i + 1] || null;
+          }
+        }
+
+        let rankProgress = 1;
+        let xpInTier = xp - currentRank.minXp;
+        let xpNeededForNext = 0;
+        if (nextRank) {
+          xpNeededForNext = nextRank.minXp - currentRank.minXp;
+          rankProgress = Math.min(1, Math.max(0, xpInTier / xpNeededForNext));
+        }
+
+        const totalCampaignSectors = 13;
+        const sectorsCleared = Math.min(totalCampaignSectors, Math.max(0, data.bestWave > 0 ? data.bestWave : 0));
+        const campaignPercent = Math.round((sectorsCleared / totalCampaignSectors) * 100);
+
+        return {
+          ...data,
+          avgAccuracy,
+          xp,
+          currentRank,
+          nextRank,
+          rankProgress,
+          rankPercent: Math.round(rankProgress * 100),
+          sectorsCleared,
+          totalCampaignSectors,
+          campaignPercent
+        };
+      },
+
+      reset() {
+        localStorage.removeItem(this.storageKey);
+        localStorage.removeItem('ashooter_highscore');
+        return this.getComputedStats();
       }
     };
 
@@ -1576,26 +1841,11 @@
           this.openSettingsOverlay();
         });
 
-        // 3. "my stats" in crisp light silver with warm golden-amber hover
+        // 3. "my stats" in crisp light silver with warm golden-amber hover (opens standard stats & user progress)
         makeInteractiveMenuBtn(menuStartY + lineSpacing * 2, 'my stats', '22px', '#d4d4d8', '#fbbf24', () => {
           sound.init();
           sound.lock();
-          const hs = parseInt(localStorage.getItem('ashooter_highscore') || '0', 10);
-          if (this.statsToast) this.statsToast.destroy();
-          this.statsToast = this.add.text(width / 2, menuStartY + lineSpacing * 3 + 52, `HIGH SCORE: ${hs.toLocaleString()} PTS`, {
-            fontFamily: FONT_MONO,
-            fontSize: '14px',
-            fontWeight: 'bold',
-            color: '#fbbf24',
-            stroke: '#000000',
-            strokeThickness: 3
-          }).setOrigin(0.5).setDepth(20);
-          this.time.delayedCall(1800, () => {
-            if (this.statsToast) {
-              this.statsToast.destroy();
-              this.statsToast = null;
-            }
-          });
+          this.openStatsOverlay();
         });
 
         // 4. "load your own text" in crisp white with emerald hover
@@ -1650,8 +1900,9 @@
         });
         infoBtn.on('pointerdown', goToCredits);
 
-        // Keyboard Enter or Space to start immediately (unless Settings overlay is open)
+        // Keyboard Enter or Space to start immediately (unless Settings or Stats overlay is open)
         this.isSettingsOpen = false;
+        this.isStatsOpen = false;
         this.input.keyboard.on('keydown', (event) => {
           if (this.isSettingsOpen) {
             if (event.key === 'Escape') {
@@ -1659,10 +1910,319 @@
             }
             return;
           }
+          if (this.isStatsOpen) {
+            if (event.key === 'Escape' || event.key === 'Backspace') {
+              this.closeStatsOverlay();
+            }
+            return;
+          }
           if (event.key === 'Enter' || event.key === ' ') {
             startGame();
           }
         });
+      }
+
+      openStatsOverlay() {
+        if (this.isStatsOpen || this.isSettingsOpen) return;
+        this.isStatsOpen = true;
+
+        const { width, height } = this.scale;
+        const stats = UserProgressManager.getComputedStats();
+
+        this.statsContainer = this.add.container(0, 0).setDepth(55);
+
+        // 1. Dark semi-transparent canvas backdrop blocking click-through
+        const backdrop = this.add.rectangle(width / 2, height / 2, width, height, 0x050609, 0.96)
+          .setInteractive();
+        this.statsContainer.add(backdrop);
+
+        // 2. Header: MY STATS
+        const title = this.add.text(width / 2, 54, 'MY STATS', {
+          fontFamily: FONT_MONO,
+          fontSize: '30px',
+          fontWeight: 'bold',
+          color: '#ffffff',
+          letterSpacing: 3
+        }).setOrigin(0.5);
+        this.statsContainer.add(title);
+
+        const subtitle = this.add.text(width / 2, 86, 'STANDARD STATS & PILOT PROGRESS', {
+          fontFamily: FONT_MONO,
+          fontSize: '12px',
+          color: '#778899',
+          letterSpacing: 2
+        }).setOrigin(0.5);
+        this.statsContainer.add(subtitle);
+
+        // --------------------------------------------------------------------
+        // SECTION A: STANDARD 2-COLUMN ZTYPE STATS GRID
+        // --------------------------------------------------------------------
+        const colW = 215;
+        const gap = 42;
+        const totalW = colW * 2 + gap;
+        const col1X = Math.round((width - totalW) / 2);
+        const col2X = col1X + colW + gap;
+
+        const row1Y = 122;
+        const row2Y = 208;
+        const row3Y = 294;
+
+        const linesGfx = this.add.graphics();
+        linesGfx.lineStyle(2, 0x55aaff, 0.85);
+        this.statsContainer.add(linesGfx);
+
+        const addStandardStatCell = (x, y, label, valueStr, valColor = '#55aaff', fontSize = '28px') => {
+          const lbl = this.add.text(x, y, label, {
+            fontFamily: FONT_MONO,
+            fontSize: '12px',
+            color: '#778899',
+            letterSpacing: 1.2
+          });
+          const val = this.add.text(x, y + 18, valueStr, {
+            fontFamily: FONT_MONO,
+            fontSize: fontSize,
+            fontWeight: 'bold',
+            color: valColor
+          });
+          linesGfx.lineBetween(x, y + 58, x + colW, y + 58);
+          this.statsContainer.add([lbl, val]);
+        };
+
+        // Row 1: HIGH SCORE & HIGHEST WAVE
+        const highScoreFormatted = String(stats.highScore || 0).padStart(6, '0');
+        const highestWaveFormatted = `WAVE ${String(stats.bestWave || 0).padStart(3, '0')}`;
+        addStandardStatCell(col1X, row1Y, 'HIGH SCORE', highScoreFormatted, '#ff8800', '28px');
+        addStandardStatCell(col2X, row1Y, 'HIGHEST WAVE', highestWaveFormatted, '#55aaff', '26px');
+
+        // Row 2: ACCURACY & LONGEST STREAK
+        addStandardStatCell(col1X, row2Y, 'ACCURACY', `${stats.avgAccuracy}%`, '#34d399', '28px');
+        addStandardStatCell(col2X, row2Y, 'LONGEST STREAK', `${stats.bestStreak}`, '#fbbf24', '28px');
+
+        // Row 3: BEST SPEED (WPM) & WORDS DESTROYED
+        addStandardStatCell(col1X, row3Y, 'BEST SPEED', `${stats.bestWpm} WPM`, '#e4e4e7', '26px');
+        addStandardStatCell(col2X, row3Y, 'WORDS DESTROYED', `${stats.totalWordsDestroyed.toLocaleString()}`, '#e4e4e7', '26px');
+
+        // --------------------------------------------------------------------
+        // SECTION B: USER PROGRESS (RANK LEVEL + 13-SECTOR CAMPAIGN + HISTORY)
+        // --------------------------------------------------------------------
+        const progY = 386;
+
+        const progHeader = this.add.text(col1X, progY, 'USER PROGRESS', {
+          fontFamily: FONT_MONO,
+          fontSize: '14px',
+          fontWeight: 'bold',
+          color: '#ff8800',
+          letterSpacing: 2
+        });
+        this.statsContainer.add(progHeader);
+
+        const gamesCountText = this.add.text(col1X + totalW, progY, `MISSIONS: ${stats.totalGames}  |  WAVES CLEARED: ${stats.totalWavesCleared}`, {
+          fontFamily: FONT_MONO,
+          fontSize: '11px',
+          color: '#94a3b8'
+        }).setOrigin(1, 0);
+        this.statsContainer.add(gamesCountText);
+
+        // 1. Pilot Rank & XP Level Progress Bar
+        const rankBoxY = progY + 28;
+        const rankTitle = this.add.text(col1X, rankBoxY, `RANK: ${stats.currentRank.title} (LVL ${stats.currentRank.level})`, {
+          fontFamily: FONT_MONO,
+          fontSize: '14px',
+          fontWeight: 'bold',
+          color: stats.currentRank.color
+        });
+        this.statsContainer.add(rankTitle);
+
+        const nextRankLabel = stats.nextRank
+          ? `${stats.rankPercent}% TO ${stats.nextRank.title} (${stats.xp.toLocaleString()} / ${stats.nextRank.minXp.toLocaleString()} XP)`
+          : `MAX RANK ACHIEVED (${stats.xp.toLocaleString()} XP)`;
+
+        const xpText = this.add.text(col1X + totalW, rankBoxY + 1, nextRankLabel, {
+          fontFamily: FONT_MONO,
+          fontSize: '11px',
+          color: '#a1a1aa'
+        }).setOrigin(1, 0);
+        this.statsContainer.add(xpText);
+
+        const barGfx = this.add.graphics();
+        this.statsContainer.add(barGfx);
+
+        // XP Bar Track
+        const xpBarY = rankBoxY + 24;
+        const barH = 12;
+        barGfx.fillStyle(0x111827, 1);
+        barGfx.fillRoundedRect(col1X, xpBarY, totalW, barH, 3);
+        barGfx.lineStyle(1, 0x334155, 0.9);
+        barGfx.strokeRoundedRect(col1X, xpBarY, totalW, barH, 3);
+
+        // XP Bar Fill
+        const fillW = Math.max(6, Math.round(totalW * stats.rankProgress));
+        barGfx.fillStyle(0xff8800, 1);
+        barGfx.fillRoundedRect(col1X, xpBarY, fillW, barH, 3);
+
+        // 2. Campaign Sector Mastery (13 Sectors Segmented Progress Bar)
+        const campY = xpBarY + 28;
+        const campTitle = this.add.text(col1X, campY, 'SECTOR CAMPAIGN PROGRESS', {
+          fontFamily: FONT_MONO,
+          fontSize: '12px',
+          color: '#778899',
+          letterSpacing: 1
+        });
+        const campVal = this.add.text(col1X + totalW, campY, `${stats.sectorsCleared} / ${stats.totalCampaignSectors} SECTORS (${stats.campaignPercent}%)`, {
+          fontFamily: FONT_MONO,
+          fontSize: '12px',
+          fontWeight: 'bold',
+          color: '#34d399'
+        }).setOrigin(1, 0);
+        this.statsContainer.add([campTitle, campVal]);
+
+        const segY = campY + 22;
+        const segGap = 4;
+        const numSectors = stats.totalCampaignSectors;
+        const segW = Math.floor((totalW - segGap * (numSectors - 1)) / numSectors);
+        for (let i = 0; i < numSectors; i++) {
+          const sx = col1X + i * (segW + segGap);
+          const isCleared = i < stats.sectorsCleared;
+          barGfx.fillStyle(isCleared ? 0x10b981 : 0x111827, 1);
+          barGfx.fillRoundedRect(sx, segY, segW, 12, 2);
+          barGfx.lineStyle(1, isCleared ? 0x34d399 : 0x334155, 0.9);
+          barGfx.strokeRoundedRect(sx, segY, segW, 12, 2);
+        }
+
+        // 3. Recent Runs Progression Chart / Last Mission Summary
+        const histY = segY + 28;
+        const histLabel = this.add.text(col1X, histY, 'RECENT MISSION PERFORMANCE', {
+          fontFamily: FONT_MONO,
+          fontSize: '12px',
+          color: '#778899',
+          letterSpacing: 1
+        });
+        this.statsContainer.add(histLabel);
+
+        if (stats.lastRun) {
+          const lr = stats.lastRun;
+          const lastRunSummary = `LAST: ${String(lr.score).padStart(6, '0')} PTS • WAVE ${String(lr.wave).padStart(3, '0')} • ${lr.accuracy}% ACC • ${lr.wpm} WPM`;
+          const lastRunText = this.add.text(col1X + totalW, histY, lastRunSummary, {
+            fontFamily: FONT_MONO,
+            fontSize: '11px',
+            color: '#fbbf24'
+          }).setOrigin(1, 0);
+          this.statsContainer.add(lastRunText);
+        } else {
+          const noRunText = this.add.text(col1X + totalW, histY, 'NO MISSIONS RECORDED YET', {
+            fontFamily: FONT_MONO,
+            fontSize: '11px',
+            color: '#475569'
+          }).setOrigin(1, 0);
+          this.statsContainer.add(noRunText);
+        }
+
+        // Mini horizontal bar chart of up to 8 recent runs
+        const chartBoxY = histY + 22;
+        const chartBoxH = 66;
+        barGfx.fillStyle(0x090d16, 0.95);
+        barGfx.fillRoundedRect(col1X, chartBoxY, totalW, chartBoxH, 4);
+        barGfx.lineStyle(1, 0x1e293b, 1);
+        barGfx.strokeRoundedRect(col1X, chartBoxY, totalW, chartBoxH, 4);
+
+        const recentRuns = [...(stats.history || [])].reverse();
+        const maxHistScore = Math.max(1000, stats.highScore || 1000);
+        const maxSlots = 8;
+        const slotW = Math.floor((totalW - 24) / maxSlots);
+
+        for (let i = 0; i < maxSlots; i++) {
+          const run = recentRuns[i];
+          const bx = col1X + 14 + i * slotW;
+          const maxBarH = 38;
+          const barBottomY = chartBoxY + chartBoxH - 18;
+
+          if (run) {
+            const ratio = Math.min(1, Math.max(0.12, run.score / maxHistScore));
+            const bh = Math.round(maxBarH * ratio);
+            const isBest = run.score > 0 && run.score >= stats.highScore;
+            barGfx.fillStyle(isBest ? 0xff8800 : 0x38bdf8, 0.9);
+            barGfx.fillRect(bx, barBottomY - bh, slotW - 14, bh);
+
+            const wLbl = this.add.text(bx + (slotW - 14) / 2, barBottomY + 4, `W${run.wave}`, {
+              fontFamily: FONT_MONO,
+              fontSize: '10px',
+              color: '#94a3b8'
+            }).setOrigin(0.5, 0);
+            this.statsContainer.add(wLbl);
+          } else {
+            barGfx.fillStyle(0x1e293b, 0.5);
+            barGfx.fillRect(bx, barBottomY - 4, slotW - 14, 4);
+            const dashLbl = this.add.text(bx + (slotW - 14) / 2, barBottomY + 4, '--', {
+              fontFamily: FONT_MONO,
+              fontSize: '10px',
+              color: '#334155'
+            }).setOrigin(0.5, 0);
+            this.statsContainer.add(dashLbl);
+          }
+        }
+
+        // --------------------------------------------------------------------
+        // SECTION C: BACK TO TITLE & RESET PROGRESS
+        // --------------------------------------------------------------------
+        const backBtn = this.add.text(width / 2, 682, 'back to title', {
+          fontFamily: FONT_MONO,
+          fontSize: '26px',
+          color: '#ff8800',
+          fontWeight: 'bold'
+        }).setOrigin(0.5).setInteractive({ useHandCursor: true });
+        this.statsContainer.add(backBtn);
+
+        backBtn.on('pointerover', () => {
+          backBtn.setText('› back to title ‹');
+          backBtn.setColor('#ffaa33');
+          backBtn.setScale(1.05);
+        });
+        backBtn.on('pointerout', () => {
+          backBtn.setText('back to title');
+          backBtn.setColor('#ff8800');
+          backBtn.setScale(1.0);
+        });
+        backBtn.on('pointerdown', () => {
+          sound.lock();
+          this.closeStatsOverlay();
+        });
+
+        let confirmReset = false;
+        const resetBtn = this.add.text(width / 2, 734, 'reset progress', {
+          fontFamily: FONT_MONO,
+          fontSize: '13px',
+          color: '#64748b'
+        }).setOrigin(0.5).setInteractive({ useHandCursor: true });
+        this.statsContainer.add(resetBtn);
+
+        resetBtn.on('pointerover', () => {
+          resetBtn.setColor(confirmReset ? '#ef4444' : '#94a3b8');
+        });
+        resetBtn.on('pointerout', () => {
+          resetBtn.setColor(confirmReset ? '#ef4444' : '#64748b');
+        });
+        resetBtn.on('pointerdown', () => {
+          sound.init();
+          if (!confirmReset) {
+            confirmReset = true;
+            resetBtn.setText('click again to confirm reset');
+            resetBtn.setColor('#ef4444');
+            sound.error();
+          } else {
+            UserProgressManager.reset();
+            sound.lock();
+            this.closeStatsOverlay();
+            this.openStatsOverlay();
+          }
+        });
+      }
+
+      closeStatsOverlay() {
+        if (this.statsContainer) {
+          this.statsContainer.destroy();
+          this.statsContainer = null;
+        }
+        this.isStatsOpen = false;
       }
 
       openSettingsOverlay() {
@@ -2952,6 +3512,23 @@
           });
           backBtn.on('pointerdown', () => {
             sound.lock();
+            if (this.score > 0 || this.enemiesDestroyed > 0) {
+              const elapsedMinutes = Math.max(0.1, (this.time.now - this.gameStartTime) / 60000);
+              const sessionWpm = Math.round((this.correctKeystrokes / 5) / elapsedMinutes);
+              const sessionAcc = this.totalKeystrokes > 0
+                ? Math.round((this.correctKeystrokes / this.totalKeystrokes) * 100)
+                : 100;
+              UserProgressManager.recordSession({
+                score: this.score,
+                wave: this.wave,
+                enemiesDestroyed: this.enemiesDestroyed,
+                wpm: sessionWpm,
+                accuracy: sessionAcc,
+                maxCombo: this.maxCombo,
+                totalKeystrokes: this.totalKeystrokes,
+                correctKeystrokes: this.correctKeystrokes
+              });
+            }
             this.cameras.main.fade(250, 3, 6, 17, false, (cam, progress) => {
               if (progress === 1) {
                 this.scene.start('MenuScene');
@@ -4113,6 +4690,7 @@
         const waveBonus = this.wave * 400;
         this.score += waveBonus;
         this.updateStats();
+        UserProgressManager.recordWaveClear(this.wave, this.score);
 
         const waveNumPadded = String(this.wave).padStart(3, '0');
         const clearBanner = this.add.text(width / 2, height / 2 - 20, `Wave ${waveNumPadded} Clear`, {
@@ -4291,11 +4869,15 @@
           wpm: finalWpm,
           accuracy: finalAccuracy,
           maxCombo: this.maxCombo,
+          totalKeystrokes: this.totalKeystrokes,
+          correctKeystrokes: this.correctKeystrokes,
           empUsedCount: this.empUsedCount,
           isNewRecord: isNewRecord,
           breachReason: breachReason,
           breachWord: breachWord
         };
+
+        UserProgressManager.recordSession(summaryStats);
 
         this.time.delayedCall(1100, () => {
           this.cameras.main.fade(400, 3, 6, 17, false, (cam, progress) => {
@@ -4569,21 +5151,40 @@
 
         linesGfx.lineBetween(col2X, row2Y + 62, col2X + colW, row2Y + 62);
 
-        // Loading stats pulse text (Screenshot 3)
-        const loadingText = this.add.text(width / 2, 405, 'LOADING STATS ..', {
-          fontFamily: FONT_MONO,
-          fontSize: '14px',
-          color: '#4a6070',
-          letterSpacing: 2
-        }).setOrigin(0.5).setDepth(10);
+        // User Progress summary on Game Over screen (replaces static LOADING STATS)
+        const progress = UserProgressManager.getComputedStats();
+        const progTopY = 398;
 
-        this.tweens.add({
-          targets: loadingText,
-          alpha: 0.35,
-          duration: 700,
-          yoyo: true,
-          repeat: -1
-        });
+        this.add.text(col1X, progTopY, `PILOT RANK: ${progress.currentRank.title} (LVL ${progress.currentRank.level})`, {
+          fontFamily: FONT_MONO,
+          fontSize: '13px',
+          fontWeight: 'bold',
+          color: progress.currentRank.color,
+          letterSpacing: 1
+        }).setDepth(10);
+
+        this.add.text(col1X + totalW, progTopY, `HIGH SCORE: ${String(progress.highScore).padStart(6, '0')}`, {
+          fontFamily: FONT_MONO,
+          fontSize: '13px',
+          fontWeight: 'bold',
+          color: '#fbbf24'
+        }).setOrigin(1, 0).setDepth(10);
+
+        const progBarGfx = this.add.graphics().setDepth(10);
+        progBarGfx.fillStyle(0x111827, 1);
+        progBarGfx.fillRoundedRect(col1X, progTopY + 24, totalW, 10, 3);
+        progBarGfx.lineStyle(1, 0x334155, 0.9);
+        progBarGfx.strokeRoundedRect(col1X, progTopY + 24, totalW, 10, 3);
+
+        const progFillW = Math.max(6, Math.round(totalW * progress.rankProgress));
+        progBarGfx.fillStyle(0xff8800, 1);
+        progBarGfx.fillRoundedRect(col1X, progTopY + 24, progFillW, 10, 3);
+
+        this.add.text(width / 2, progTopY + 46, `CAMPAIGN PROGRESS: ${progress.sectorsCleared}/${progress.totalCampaignSectors} SECTORS (${progress.campaignPercent}%)  •  WORDS DESTROYED: ${progress.totalWordsDestroyed.toLocaleString()}`, {
+          fontFamily: FONT_MONO,
+          fontSize: '11px',
+          color: '#94a3b8'
+        }).setOrigin(0.5, 0).setDepth(10);
 
         // Bottom: "back to title" (Screenshot 3)
         const backBtn = this.add.text(width / 2, height - 95, 'back to title', {
