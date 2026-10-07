@@ -1,7 +1,7 @@
 {
-  "name": "Ashoter – Space Typing Arcade Shooter Game",
-  "short_name": "Ashoter",
-  "description": "Play Ashoter by dushi_dev, a fast-paced 3D space typing arcade shooter game. Destroy incoming word waves, load custom text, and test your typing speed online.",
+  "name": "OrbitKey – Space Typing Arcade Shooter Game",
+  "short_name": "OrbitKey",
+  "description": "Play OrbitKey by dushi_dev, a fast-paced 3D space typing arcade shooter game. Destroy incoming word waves, load custom text, and test your typing speed online.",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#07080b",

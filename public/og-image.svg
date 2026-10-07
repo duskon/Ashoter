@@ -30,8 +30,8 @@
     <line x1="1000" y1="0" x2="1000" y2="630"/>
   </g>
   <text x="600" y="120" text-anchor="middle" fill="#a1a1aa" font-family="monospace" font-size="24" letter-spacing="8">dushi_dev</text>
-  <text x="594" y="226" text-anchor="middle" fill="#1e6073" font-family="monospace" font-weight="900" font-size="96" letter-spacing="6">Ashoter</text>
-  <text x="600" y="218" text-anchor="middle" fill="#ffffff" font-family="monospace" font-weight="900" font-size="96" letter-spacing="6">Ashoter</text>
+  <text x="594" y="226" text-anchor="middle" fill="#1e6073" font-family="monospace" font-weight="900" font-size="96" letter-spacing="6">OrbitKey</text>
+  <text x="600" y="218" text-anchor="middle" fill="#ffffff" font-family="monospace" font-weight="900" font-size="96" letter-spacing="6">OrbitKey</text>
   <g transform="translate(528, 265) scale(1.5)">
     <rect x="42" y="11" width="12" height="13" rx="1" fill="#d8e6ee"/>
     <path d="M48 12 L84 59 L79 74 L63 68 L56 79 Q48 74 40 79 L33 68 L17 74 L12 59 Z" fill="url(#shipRim)"/>

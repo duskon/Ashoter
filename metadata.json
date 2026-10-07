@@ -1,6 +1,6 @@
 {
   "name": "Ashooter",
-  "description": "Play Ashoter by dushi_dev, a fast-paced 3D space typing arcade shooter game. Destroy incoming word waves, load custom text, and test your typing speed online.",
+  "description": "Play OrbitKey by dushi_dev, a fast-paced 3D space typing arcade shooter game. Destroy incoming word waves, load custom text, and test your typing speed online.",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }

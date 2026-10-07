@@ -1,4 +1,4 @@
-# robots.txt for Ashoter (by dushi_dev)
+# robots.txt for OrbitKey (by dushi_dev)
 # Production Domain: https://ashooter.vercel.app/
 
 User-agent: *
