@@ -71,7 +71,13 @@
       "@type": "Person",
       "name": "dushi_dev",
       "alternateName": "dush_dev",
-      "email": "duskonpaul@gmail.com"
+      "email": "duskonpaul@gmail.com",
+      "sameAs": [
+        "https://www.instagram.com/dusky_one1",
+        "https://www.youtube.com/@duskonpaul",
+        "https://github.com/duskon",
+        "https://www.facebook.com/dash.creper"
+      ]
     },
     "creator": {
       "@type": "Person",
@@ -176,7 +182,7 @@
       <li>Customizable Settings: Adjust synthesized Web Audio laser sound effects, ambient space music, and word font sizes.</li>
     </ul>
     <h2>Credits</h2>
-    <p>Concept, Graphics &amp; Programming: dush_dev (dushi_dev) — duskonpaul@gmail.com. UX &amp; Additional Design: Norbert (Figma). Music: Furaha. Original Concept &amp; Engine: Dushi. Made in Rwanda, Gihara.</p>
+    <p>Concept, Graphics &amp; Programming: dush_dev (dushi_dev) — duskonpaul@gmail.com. UX &amp; Additional Design: Norbert (Figma). Music: Furaha. Original Concept &amp; Engine: Dushi. Socials: Instagram (dusky_one1), YouTube (@duskonpaul), GitHub (duskon), Facebook (dash.creper), Gmail (duskonpaul@gmail.com). Made in Rwanda, Gihara.</p>
   </main>
 
   <div id="ambient-bg"></div>
@@ -393,7 +399,57 @@
       reset() {
         localStorage.removeItem(this.storageKey);
         localStorage.removeItem('ashooter_highscore');
+        if (typeof WordHistoryManager !== 'undefined') WordHistoryManager.clearHistory();
         return this.getComputedStats();
+      }
+    };
+
+    // --------------------------------------------------------------------------
+    // 0.6 WORD HISTORY & ANTI-REPEAT COOLDOWN MANAGER (3 Games Cooldown)
+    // --------------------------------------------------------------------------
+    const WordHistoryManager = {
+      storageKey: 'orbitkey_recent_games_words_v1',
+      maxGamesTracked: 3,
+
+      loadHistory() {
+        try {
+          const raw = localStorage.getItem(this.storageKey);
+          if (!raw) return [];
+          const parsed = JSON.parse(raw);
+          if (Array.isArray(parsed)) {
+            return parsed.slice(0, this.maxGamesTracked);
+          }
+        } catch (e) {}
+        return [];
+      },
+
+      recordGame(typedWordsArray) {
+        if (!typedWordsArray || typedWordsArray.length === 0) return;
+        try {
+          const history = this.loadHistory();
+          const cleanWords = Array.from(new Set(typedWordsArray.map(w => String(w).toLowerCase().trim())));
+          if (cleanWords.length > 0) {
+            const updated = [cleanWords, ...history].slice(0, this.maxGamesTracked);
+            localStorage.setItem(this.storageKey, JSON.stringify(updated));
+          }
+        } catch (e) {}
+      },
+
+      getCooldownWords() {
+        const history = this.loadHistory();
+        const set = new Set();
+        history.forEach(gameWords => {
+          if (Array.isArray(gameWords)) {
+            gameWords.forEach(w => set.add(w.toLowerCase()));
+          }
+        });
+        return set;
+      },
+
+      clearHistory() {
+        try {
+          localStorage.removeItem(this.storageKey);
+        } catch (e) {}
       }
     };
 
@@ -1079,27 +1135,39 @@
     let activeWordPackKey = 'standard';
 
     // Parse any user-pasted text into valid categorized ZType word bank
+    // Strict single-word parsing: strips initials/noise like FC, CF and keeps pure individual words
     function parseCustomText(text) {
       if (!text || typeof text !== 'string') return null;
 
-      // Extract all words, convert to uppercase, keep only letters A-Z
-      const rawWords = text.toUpperCase().replace(/[^A-Z\s]/g, ' ').split(/\s+/);
-      const uniqueWords = Array.from(new Set(rawWords.filter(w => w.length >= 2 && w.length <= 22)));
+      // Noise abbreviations to skip (so 'Sevilla FC' yields 'SEVILLA' only)
+      const noiseTokens = new Set([
+        'FC', 'CF', 'CP', 'SC', 'AC', 'BC', 'VS', 'THE', 'AND', 'FOR', 'WITH', 'FROM'
+      ]);
 
+      // Split text strictly into individual single words (no glued multi-word phrases)
+      const rawWords = text
+        .toUpperCase()
+        .replace(/[^A-Z\s]/g, ' ')
+        .split(/\s+/)
+        .map(w => w.trim())
+        .filter(w => w.length >= 3 && w.length <= 18 && !noiseTokens.has(w));
+
+      const uniqueWords = Array.from(new Set(rawWords));
       if (uniqueWords.length === 0) return null;
 
-      const short = uniqueWords.filter(w => w.length <= 4);
-      const medium = uniqueWords.filter(w => w.length >= 5 && w.length <= 7);
-      const long = uniqueWords.filter(w => w.length >= 8 && w.length <= 12);
-      const boss = uniqueWords.filter(w => w.length >= 13);
+      const short = uniqueWords.filter(w => w.length <= 5);
+      const medium = uniqueWords.filter(w => w.length >= 6 && w.length <= 8);
+      const long = uniqueWords.filter(w => w.length >= 9 && w.length <= 13);
+      const boss = uniqueWords.filter(w => w.length >= 14);
 
-      // Ensure fallbacks so the user's custom words are always fed to the game
+      // Populate custom pack categories with abundant fallbacks so categories never prematurely exhaust
       WORD_PACKS.custom = {
         name: 'CUSTOM TEXT',
-        short: short.length > 0 ? short : uniqueWords,
-        medium: medium.length > 0 ? medium : uniqueWords,
-        long: long.length > 0 ? long : uniqueWords,
-        boss: boss.length > 0 ? boss : uniqueWords
+        all: uniqueWords,
+        short: short.length >= 6 ? short : uniqueWords,
+        medium: medium.length >= 6 ? medium : uniqueWords,
+        long: long.length >= 6 ? long : uniqueWords,
+        boss: boss.length >= 3 ? boss : uniqueWords
       };
 
       return uniqueWords.length;
@@ -1115,12 +1183,76 @@
     }
 
     // Helper to get random item from current active pack (always lowercase as in authentic ZType)
-    function getRandomWord(category, excludeSet = new Set()) {
+    // Guarantees:
+    // 1. NO WORD REPEATS IN THE SAME GAME SESSION (as long as any unused word remains in the pack)
+    // 2. Words typed in the last 3 games undergo a 3-game cooldown
+    // 3. No word currently alive on-screen is selected
+    function getRandomWord(category, excludeSet = new Set(), gameUsedSet = null) {
       const pack = WORD_PACKS[activeWordPackKey] || WORD_PACKS.standard;
-      const pool = pack[category] || pack.short || WORD_PACKS.standard.short;
-      const candidates = pool.filter(w => !excludeSet.has(w.toLowerCase()));
-      const source = candidates.length > 0 ? candidates : pool;
-      return source[Math.floor(Math.random() * source.length)].toLowerCase();
+      const targetPool = pack[category] || pack.short || WORD_PACKS.standard.short;
+
+      // Complete pool of all words in this active pack
+      const allPackWords = Array.from(new Set([
+        ...(pack.short || []),
+        ...(pack.medium || []),
+        ...(pack.long || []),
+        ...(pack.boss || []),
+        ...(pack.all || [])
+      ]));
+
+      const cooldownSet = WordHistoryManager ? WordHistoryManager.getCooldownWords() : new Set();
+
+      // Clean check helpers
+      const isAliveOnScreen = (w) => {
+        if (!excludeSet) return false;
+        const clean = w.toLowerCase().replace(/[^a-z]/g, '');
+        for (const ex of excludeSet) {
+          if (String(ex).toLowerCase().replace(/[^a-z]/g, '') === clean) return true;
+        }
+        return false;
+      };
+
+      const isUsedThisGame = (w) => {
+        if (!gameUsedSet) return false;
+        const clean = w.toLowerCase().replace(/[^a-z]/g, '');
+        return gameUsedSet.has(clean);
+      };
+
+      const isOnCooldown = (w) => {
+        if (!cooldownSet || cooldownSet.size === 0) return false;
+        const clean = w.toLowerCase().replace(/[^a-z]/g, '');
+        return cooldownSet.has(clean);
+      };
+
+      // TIER 1: Target category, strictly unspawned this game, not on cooldown, not on screen
+      let candidates = targetPool.filter(w => !isAliveOnScreen(w) && !isUsedThisGame(w) && !isOnCooldown(w));
+
+      // TIER 2: If target category has run out of unspawned words, borrow from ALL words in active pack!
+      // (Strictly: NOT on screen, NOT used this game, NOT on cooldown)
+      if (candidates.length === 0) {
+        candidates = allPackWords.filter(w => !isAliveOnScreen(w) && !isUsedThisGame(w) && !isOnCooldown(w));
+      }
+
+      // TIER 3: If 3-game cooldown leaves no words, relax 3-game cooldown
+      // BUT STILL STRICTLY FORBID SAME-GAME REPEATS!
+      if (candidates.length === 0) {
+        candidates = targetPool.filter(w => !isAliveOnScreen(w) && !isUsedThisGame(w));
+      }
+
+      // TIER 4: Across all pack words, relax 3-game cooldown, BUT STILL STRICTLY FORBID SAME-GAME REPEATS!
+      if (candidates.length === 0) {
+        candidates = allPackWords.filter(w => !isAliveOnScreen(w) && !isUsedThisGame(w));
+      }
+
+      // TIER 5 (Exhaustion safeguard): ONLY if 100% of all words in the entire pack have already been spawned this game:
+      // Recycle words, avoiding any word currently alive on screen
+      if (candidates.length === 0) {
+        candidates = allPackWords.filter(w => !isAliveOnScreen(w));
+      }
+
+      const source = candidates.length > 0 ? candidates : allPackWords;
+      const chosen = source[Math.floor(Math.random() * source.length)];
+      return chosen ? chosen.toLowerCase() : 'orbit';
     }
 
     // --------------------------------------------------------------------------
@@ -1148,6 +1280,7 @@
         this.generateReticleTexture();
         this.generateTargetDroneTexture();
         this.generateEMPHexagonTexture();
+        this.generateSocialLogosTextures();
 
         // Ensure clear and uniform monospace / clean sans fonts are loaded in the browser
         if (document.fonts && document.fonts.ready) {
@@ -1625,6 +1758,153 @@
 
         canvas.refresh();
       }
+
+      // Authentic Brand Vector Icons for Creator Socials: Instagram, Facebook, GitHub, Gmail, YouTube
+      // Styled as sleek cyber vector icons to seamlessly match OrbitKey's sci-fi aesthetic
+      generateSocialLogosTextures() {
+        const getOrCreateCanvas = (key, w, h) => {
+          if (this.textures.exists(key)) {
+            this.textures.remove(key);
+          }
+          return this.textures.createCanvas(key, w, h);
+        };
+
+        const drawRoundRect = (ctx, x, y, w, h, r) => {
+          ctx.beginPath();
+          ctx.moveTo(x + r, y);
+          ctx.lineTo(x + w - r, y);
+          ctx.arcTo(x + w, y, x + w, y + r, r);
+          ctx.lineTo(x + w, y + h - r);
+          ctx.arcTo(x + w, y + h, x + w - r, y + h, r);
+          ctx.lineTo(x + r, y + h);
+          ctx.arcTo(x, y + h, x, y + h - r, r);
+          ctx.lineTo(x, y + r);
+          ctx.arcTo(x, y, x + r, y, r);
+          ctx.closePath();
+        };
+
+        // 1. INSTAGRAM (Ig) - Pure vector glyph icon (no border, no background)
+        {
+          const canvas = getOrCreateCanvas('social_instagram', 96, 96);
+          const ctx = canvas.getContext();
+          ctx.clearRect(0, 0, 96, 96);
+
+          // Camera body outline
+          ctx.strokeStyle = '#ffffff';
+          ctx.lineWidth = 6;
+          drawRoundRect(ctx, 16, 16, 64, 64, 18);
+          ctx.stroke();
+
+          // Center lens
+          ctx.beginPath();
+          ctx.arc(48, 48, 15, 0, Math.PI * 2);
+          ctx.lineWidth = 5.5;
+          ctx.stroke();
+
+          // Flash sensor dot
+          ctx.fillStyle = '#ffffff';
+          ctx.beginPath();
+          ctx.arc(64, 32, 4, 0, Math.PI * 2);
+          ctx.fill();
+
+          canvas.refresh();
+        }
+
+        // 2. FACEBOOK - Pure vector 'f' glyph icon (no border, no background)
+        {
+          const canvas = getOrCreateCanvas('social_facebook', 96, 96);
+          const ctx = canvas.getContext();
+          ctx.clearRect(0, 0, 96, 96);
+
+          ctx.fillStyle = '#ffffff';
+          ctx.beginPath();
+          // Crisp clean standalone Facebook 'f' icon
+          ctx.moveTo(56, 84);
+          ctx.lineTo(42, 84);
+          ctx.lineTo(42, 52);
+          ctx.lineTo(32, 52);
+          ctx.lineTo(32, 39);
+          ctx.lineTo(42, 39);
+          ctx.lineTo(42, 30);
+          ctx.arcTo(42, 12, 58, 12, 16);
+          ctx.lineTo(70, 12);
+          ctx.lineTo(70, 25);
+          ctx.lineTo(60, 25);
+          ctx.arcTo(56, 25, 56, 29, 4);
+          ctx.lineTo(56, 39);
+          ctx.lineTo(69, 39);
+          ctx.lineTo(67, 52);
+          ctx.lineTo(56, 52);
+          ctx.lineTo(56, 84);
+          ctx.closePath();
+          ctx.fill();
+
+          canvas.refresh();
+        }
+
+        // 3. GITHUB - Pure Octocat vector glyph icon (no border, no background)
+        {
+          const canvas = getOrCreateCanvas('social_github', 96, 96);
+          const ctx = canvas.getContext();
+          ctx.clearRect(0, 0, 96, 96);
+
+          ctx.save();
+          ctx.translate(14, 14);
+          ctx.scale(2.83, 2.83);
+          ctx.fillStyle = '#ffffff';
+          const p = new Path2D('M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.53 1.032 1.53 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z');
+          ctx.fill(p);
+          ctx.restore();
+
+          canvas.refresh();
+        }
+
+        // 4. GMAIL - Pure vector mail/envelope glyph icon (no border, no background)
+        {
+          const canvas = getOrCreateCanvas('social_gmail', 96, 96);
+          const ctx = canvas.getContext();
+          ctx.clearRect(0, 0, 96, 96);
+
+          // Envelope frame
+          ctx.strokeStyle = '#ffffff';
+          ctx.lineWidth = 5.5;
+          drawRoundRect(ctx, 14, 22, 68, 52, 9);
+          ctx.stroke();
+
+          // Envelope V-fold
+          ctx.beginPath();
+          ctx.moveTo(17, 25);
+          ctx.lineTo(48, 52);
+          ctx.lineTo(79, 25);
+          ctx.stroke();
+
+          canvas.refresh();
+        }
+
+        // 5. YOUTUBE - Pure vector screen & play glyph icon (no border, no background)
+        {
+          const canvas = getOrCreateCanvas('social_youtube', 96, 96);
+          const ctx = canvas.getContext();
+          ctx.clearRect(0, 0, 96, 96);
+
+          // Rounded screen frame
+          ctx.strokeStyle = '#ffffff';
+          ctx.lineWidth = 5.5;
+          drawRoundRect(ctx, 12, 22, 72, 52, 16);
+          ctx.stroke();
+
+          // Centered play triangle
+          ctx.fillStyle = '#ffffff';
+          ctx.beginPath();
+          ctx.moveTo(40, 36);
+          ctx.lineTo(40, 60);
+          ctx.lineTo(62, 48);
+          ctx.closePath();
+          ctx.fill();
+
+          canvas.refresh();
+        }
+      }
     }
 
     // --------------------------------------------------------------------------
@@ -1778,15 +2058,9 @@
           });
         });
 
-        // Interactive pointer movement: subtle horizontal ship tracking, 3D title tilt & starfield parallax
+        // Interactive pointer movement: subtle starfield parallax (ship stays stable)
         this.pointerOffsetX = 0;
-        this.input.on('pointermove', (pointer) => {
-          if (this.isSettingsOpen) return;
-          const normX = (pointer.x - width / 2) / (width / 2);
-          const normY = (pointer.y - height / 2) / (height / 2);
-          this.pointerOffsetX = normX * 18;
-          this.pointerOffsetY = normY * 12;
-        });
+        this.pointerOffsetY = 0;
 
         // 4. Start Game transition
         const startGame = () => {
@@ -1804,7 +2078,7 @@
         const menuStartY = 380;
         const lineSpacing = 54;
 
-        // Helper for interactive bracket hover feedback
+        // Helper for menu button hover feedback (color change only, no brackets, no scaling)
         const makeInteractiveMenuBtn = (y, label, fontSize, defaultColor, hoverColor, onClick) => {
           const btn = this.add.text(width / 2, y, label, {
             fontFamily: FONT_MONO,
@@ -1819,14 +2093,10 @@
 
           btn.on('pointerover', () => {
             sound.init();
-            btn.setText(`› ${label} ‹`);
             btn.setColor(hoverColor);
-            btn.setScale(1.07);
           });
           btn.on('pointerout', () => {
-            btn.setText(label);
             btn.setColor(defaultColor);
-            btn.setScale(1.0);
           });
           btn.on('pointerdown', onClick);
           return btn;
@@ -2438,69 +2708,193 @@
         const existing = document.getElementById('custom-words-modal');
         if (existing) existing.remove();
 
+        const SECTORS = {
+          'football_all': {
+            cat: 'football',
+            label: 'All Football (Clubs + Terms)',
+            badge: '⚽ Football: Clubs & Match Terms',
+            words: 'sevilla barcelona arsenal chelsea liverpool juventus milan inter dortmund atletico tottenham ajax napoli benfica porto valencia everton roma lazio galatasaray fenerbahce besiktas palmeiras flamengo corinthians brentford brighton fulham wolves leicester villarreal bilbao getafe osasuna girona mallorca bologna torino atalanta fiorentina lyon marseille lille rennes nice leipzig frankfurt stuttgart wolfsburg salzburg feyenoord olympiacos celtic rangers madrid manchester bayern munich newcastle aston boca river monaco sporting alaves celta udinese verona monza sassuolo cagliari brest strasbourg toulouse lens reims augsburg freiburg mainz werder espanyol striker goalkeeper midfielder defender winger playmaker captain referee manager offside penalty dribble volley tackle header nutmeg trophy fixture derby stadium whistle cross assist pitch foul card substitute shootout relegation possession backheel treble champion league tournament defense attack boot jersey gloves netting corner counter touchline formation kick curve swerve wall press marking scout pass clearance goalline transfer roster fullback stopper sweeper attacker'
+          },
+          'football_clubs': {
+            cat: 'football',
+            label: 'World Clubs Only',
+            badge: '🏆 Football: Top Global Clubs',
+            words: 'sevilla barcelona arsenal chelsea liverpool juventus milan inter dortmund atletico tottenham ajax napoli benfica porto valencia everton roma lazio galatasaray fenerbahce besiktas palmeiras flamengo corinthians brentford brighton fulham wolves leicester villarreal bilbao getafe osasuna girona mallorca bologna torino atalanta fiorentina lyon marseille lille rennes nice leipzig frankfurt stuttgart wolfsburg salzburg feyenoord olympiacos celtic rangers madrid manchester bayern munich newcastle aston boca river monaco sporting alaves rayo celta udinese empoli verona monza sassuolo cagliari brest strasbourg toulouse lens reims heidenheim augsburg bochum union freiburg mainz werder espanyol schalke basel twente antwerp gent sparta slavia dynamo shakhtar malmo'
+          },
+          'football_terms': {
+            cat: 'football',
+            label: 'Match Terms & Tactics',
+            badge: '⚡ Football: Terms, Rules & Tactics',
+            words: 'striker goalkeeper midfielder defender winger playmaker captain referee manager offside penalty dribble volley tackle header nutmeg trophy fixture derby stadium whistle cross assist pitch foul card substitute shootout relegation possession backheel treble champion league tournament defense attack boot jersey gloves netting corner counter touchline formation kick curve swerve wall press marking scout pass clearance goalline transfer roster fullback stopper sweeper attacker'
+          },
+          'basketball': {
+            cat: 'basketball',
+            label: '🏀 Basketball (Teams & Terms)',
+            badge: '🏀 Basketball: NBA Teams & Terms',
+            words: 'lakers celtics warriors bulls heat spurs mavericks bucks suns nuggets knicks sixers clippers raptors rockets grizzlies hawks pacers pistons magic nets hornets timberwolves pelicans wizards blazers kings jazz dunk crossover rebound turnover layup assist pivot screen swish buzzer foul court basket arena jersey whistle guard forward center rim block steal playoffs championship overtime rookie veteran trophy halftime possession coach bench starter defense offense tempo clutch triple double'
+          },
+          'space': {
+            cat: 'space',
+            label: '🚀 Space & Cosmos',
+            badge: '🚀 Space: Cosmos & Astrophysics',
+            words: 'galaxy nebula astronaut velocity orbit cosmos rocket satellite starship telemetry propulsion interstellar trajectory hyperdrive asteroid supernova quasar pulsar gravity telescope exoplanet constellation horizon lightyear meteorite atmosphere eclipse spacecraft singularity shuttle aurora comet planet vacuum lunar solar orbital void zenith apogee perigee corona radiation solstice equinox crater module capsule booster thruster probe launch payload rover'
+          },
+          'tech': {
+            cat: 'tech',
+            label: '💻 Tech & Coding',
+            badge: '💻 Tech: Programming & Architecture',
+            words: 'algorithm compiler database framework javascript typescript python frontend backend recursive variable function interface promise container terminal kubernetes encryption repository deployment closure pipeline debugger fullstack reactivity authentication graphql websocket cache server socket syntax array binary thread kernel runtime packet router buffer schema stack queue pointer memory cluster crypto ledger lambda parser script network proxy query gateway'
+          },
+          'geography': {
+            cat: 'geography',
+            label: '🌍 World & Geography',
+            badge: '🌍 World: Nations, Capitals & Wonders',
+            words: 'tokyo london paris brazil canada australia sahara amazon himalayas pacific atlantic continent equator capital archipelago glacier volcano horizon argentina switzerland cairo madagascar reykjavik fuji kilimanjaro serengeti mediterranean caribbean antarctica greenland singapore norway portugal iceland colombia everest danube andes tundra savanna canyon monsoon oasis peninsula island plateau strait valley desert taiga lagoon crater arctic alpine fjord prairie'
+          },
+          'gaming': {
+            cat: 'gaming',
+            label: '🎮 Gaming & Esports',
+            badge: '🎮 Gaming: Mechanics & Lore',
+            words: 'respawn joystick inventory quest boss checkpoint multiplayer stealth critical speedrun arcade potion combo loot crafting avatar dungeon leaderboard cooldown headshot hitpoints walkthrough pixel guild hitbox mana levelup powerup campaign glitch esports bracket tournament nerf buff spawn shield armor stamina perk mod patch update server client latency ping lobby match weapon reload'
+          },
+          'science': {
+            cat: 'science',
+            label: '🔬 Science & Nature',
+            badge: '🔬 Science: Biology & Physics',
+            words: 'molecule genetics quantum laboratory antibody ecosystem neutron proton electron hypothesis microscope cellular vaccine organism photosynthesis biodiversity carnivore metamorphosis catalyst element chromosome biome fossil mutation thermodynamics evolution organic biosphere enzyme protein genome atom nucleus plasma laser photon radiation gravity symbiosis habitat species bacteria pathogen velocity inertia friction density voltage current resistor neuron synapse beaker prism'
+          },
+          'racing': {
+            cat: 'racing',
+            label: '🏎️ Motorsport & Racing',
+            badge: '🏎️ Racing: F1 Teams & Racecraft',
+            words: 'ferrari mclaren mercedes williams alpine sauber renault haas turbocharger aerodynamics qualifying pitstop telemetry downforce gearbox suspension horsepower chicane slipstream monaco silverstone overtake podium apex paddock grid throttle brake steering engine circuit racer helmet fuel tyre clutch cockpit radiator exhaust winglet diffuser chassis drs kerb steward flag lap sector pole transmission redline camber caster rpm spoiler'
+          }
+        };
+
         const modalOverlay = document.createElement('div');
         modalOverlay.id = 'custom-words-modal';
         modalOverlay.style.cssText = `
           position: fixed;
           inset: 0;
-          background: rgba(2, 6, 18, 0.88);
-          backdrop-filter: blur(10px);
-          -webkit-backdrop-filter: blur(10px);
+          background: rgba(2, 6, 18, 0.9);
+          backdrop-filter: blur(12px);
+          -webkit-backdrop-filter: blur(12px);
           z-index: 99999;
           display: flex;
           align-items: center;
           justify-content: center;
-          padding: 16px;
+          padding: 14px;
         `;
 
         modalOverlay.innerHTML = `
           <div id="modal-card" style="
             background: linear-gradient(180deg, #091329 0%, #050b18 100%);
             border: 2px solid #00f0ff;
-            box-shadow: 0 0 45px rgba(0, 240, 255, 0.3), 0 25px 50px rgba(0, 0, 0, 0.9);
-            border-radius: 12px;
-            max-width: 600px;
+            box-shadow: 0 0 50px rgba(0, 240, 255, 0.35), 0 25px 60px rgba(0, 0, 0, 0.95);
+            border-radius: 14px;
+            max-width: 660px;
             width: 100%;
-            padding: 24px;
+            padding: 22px 24px;
             position: relative;
             color: #f8fafc;
             font-family: 'JetBrains Mono', 'Roboto Mono', monospace;
             box-sizing: border-box;
+            max-height: 94vh;
+            overflow-y: auto;
           ">
             <!-- Header -->
-            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
               <div style="display: flex; align-items: center; gap: 10px;">
-                <span style="display: inline-block; width: 10px; height: 10px; background: #00f0ff; border-radius: 50%; box-shadow: 0 0 8px #00f0ff;"></span>
-                <h2 style="font-size: 19px; font-weight: 800; letter-spacing: 2px; color: #ffffff; text-transform: uppercase; margin: 0;">LOAD YOUR OWN WORDS</h2>
+                <span style="display: inline-block; width: 10px; height: 10px; background: #00f0ff; border-radius: 50%; box-shadow: 0 0 10px #00f0ff;"></span>
+                <h2 style="font-size: 18px; font-weight: 800; letter-spacing: 2px; color: #ffffff; text-transform: uppercase; margin: 0;">LOAD CUSTOM TEXT & SECTORS</h2>
               </div>
-              <button id="close-modal-x" style="background: none; border: none; color: #94a3b8; font-size: 26px; cursor: pointer; padding: 2px 8px; line-height: 1; transition: color 0.2s;">&times;</button>
+              <button id="close-modal-x" type="button" style="background: none; border: none; color: #94a3b8; font-size: 26px; cursor: pointer; padding: 2px 8px; line-height: 1; transition: color 0.2s;">&times;</button>
             </div>
 
-            <p style="font-size: 13px; color: #94a3b8; margin: 0 0 14px 0; line-height: 1.5;">
-              Type or paste words below. Every enemy ship in your game will carry your custom words!
+            <p style="font-size: 12.5px; color: #94a3b8; margin: 0 0 14px 0; line-height: 1.5;">
+              Pick any topic sector below to populate clubs & terms, or type your own custom words!
             </p>
 
-            <!-- Quick Samples Bar -->
-            <div style="display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; align-items: center;">
-              <span style="font-size: 11px; color: #64748b; font-weight: 700; letter-spacing: 1px;">QUICK SAMPLES:</span>
-              <button type="button" class="preset-sample-btn" data-type="space" style="background: rgba(0, 240, 255, 0.08); border: 1px solid rgba(0, 240, 255, 0.35); color: #38bdf8; font-family: inherit; font-size: 11px; font-weight: 600; padding: 4px 10px; border-radius: 4px; cursor: pointer; transition: all 0.2s;">Space</button>
-              <button type="button" class="preset-sample-btn" data-type="code" style="background: rgba(0, 240, 255, 0.08); border: 1px solid rgba(0, 240, 255, 0.35); color: #38bdf8; font-family: inherit; font-size: 11px; font-weight: 600; padding: 4px 10px; border-radius: 4px; cursor: pointer; transition: all 0.2s;">Coding</button>
-              <button type="button" class="preset-sample-btn" data-type="simple" style="background: rgba(0, 240, 255, 0.08); border: 1px solid rgba(0, 240, 255, 0.35); color: #38bdf8; font-family: inherit; font-size: 11px; font-weight: 600; padding: 4px 10px; border-radius: 4px; cursor: pointer; transition: all 0.2s;">Easy Words</button>
-              <button type="button" class="preset-sample-btn" data-type="clear" style="background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.35); color: #f87171; font-family: inherit; font-size: 11px; font-weight: 600; padding: 4px 10px; border-radius: 4px; cursor: pointer; transition: all 0.2s;">Clear</button>
+            <!-- Topic Sectors Header -->
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+              <span style="font-size: 11px; color: #38bdf8; font-weight: 800; letter-spacing: 1.5px; text-transform: uppercase;">
+                SELECT TOPIC SECTOR:
+              </span>
+              <button id="clear-custom-btn" type="button" style="
+                background: rgba(239, 68, 68, 0.08);
+                border: 1px solid rgba(239, 68, 68, 0.3);
+                color: #f87171;
+                font-family: inherit;
+                font-size: 10.5px;
+                font-weight: 700;
+                letter-spacing: 0.8px;
+                padding: 3px 8px;
+                border-radius: 4px;
+                cursor: pointer;
+                transition: color 0.15s, border-color 0.15s;
+              ">CLEAR TEXT</button>
+            </div>
+
+            <!-- Main Sector Buttons Grid -->
+            <div id="sectors-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 7px; margin-bottom: 10px;">
+              <button type="button" class="sector-btn" data-key="football" style="background: rgba(0, 240, 255, 0.08); border: 1px solid rgba(0, 240, 255, 0.4); color: #38bdf8; font-family: inherit; font-size: 11.5px; font-weight: 700; padding: 7px 10px; border-radius: 6px; cursor: pointer; text-align: left; transition: color 0.15s, border-color 0.15s, background-color 0.15s;">
+                ⚽ Football
+              </button>
+              <button type="button" class="sector-btn" data-key="basketball" style="background: rgba(255, 255, 255, 0.04); border: 1px solid #334155; color: #cbd5e1; font-family: inherit; font-size: 11.5px; font-weight: 700; padding: 7px 10px; border-radius: 6px; cursor: pointer; text-align: left; transition: color 0.15s, border-color 0.15s, background-color 0.15s;">
+                🏀 Basketball
+              </button>
+              <button type="button" class="sector-btn" data-key="space" style="background: rgba(255, 255, 255, 0.04); border: 1px solid #334155; color: #cbd5e1; font-family: inherit; font-size: 11.5px; font-weight: 700; padding: 7px 10px; border-radius: 6px; cursor: pointer; text-align: left; transition: color 0.15s, border-color 0.15s, background-color 0.15s;">
+                🚀 Space
+              </button>
+              <button type="button" class="sector-btn" data-key="tech" style="background: rgba(255, 255, 255, 0.04); border: 1px solid #334155; color: #cbd5e1; font-family: inherit; font-size: 11.5px; font-weight: 700; padding: 7px 10px; border-radius: 6px; cursor: pointer; text-align: left; transition: color 0.15s, border-color 0.15s, background-color 0.15s;">
+                💻 Tech & Code
+              </button>
+              <button type="button" class="sector-btn" data-key="geography" style="background: rgba(255, 255, 255, 0.04); border: 1px solid #334155; color: #cbd5e1; font-family: inherit; font-size: 11.5px; font-weight: 700; padding: 7px 10px; border-radius: 6px; cursor: pointer; text-align: left; transition: color 0.15s, border-color 0.15s, background-color 0.15s;">
+                🌍 Geography
+              </button>
+              <button type="button" class="sector-btn" data-key="gaming" style="background: rgba(255, 255, 255, 0.04); border: 1px solid #334155; color: #cbd5e1; font-family: inherit; font-size: 11.5px; font-weight: 700; padding: 7px 10px; border-radius: 6px; cursor: pointer; text-align: left; transition: color 0.15s, border-color 0.15s, background-color 0.15s;">
+                🎮 Gaming
+              </button>
+              <button type="button" class="sector-btn" data-key="science" style="background: rgba(255, 255, 255, 0.04); border: 1px solid #334155; color: #cbd5e1; font-family: inherit; font-size: 11.5px; font-weight: 700; padding: 7px 10px; border-radius: 6px; cursor: pointer; text-align: left; transition: color 0.15s, border-color 0.15s, background-color 0.15s;">
+                🔬 Science
+              </button>
+              <button type="button" class="sector-btn" data-key="racing" style="background: rgba(255, 255, 255, 0.04); border: 1px solid #334155; color: #cbd5e1; font-family: inherit; font-size: 11.5px; font-weight: 700; padding: 7px 10px; border-radius: 6px; cursor: pointer; text-align: left; transition: color 0.15s, border-color 0.15s, background-color 0.15s;">
+                🏎️ Racing
+              </button>
+            </div>
+
+            <!-- Sub-Sectors Bar (Dynamic for Football) -->
+            <div id="subsectors-panel" style="background: rgba(0, 240, 255, 0.05); border: 1px solid rgba(0, 240, 255, 0.22); border-radius: 8px; padding: 9px 12px; margin-bottom: 12px; display: flex; flex-wrap: wrap; align-items: center; gap: 8px;">
+              <span style="font-size: 10.5px; color: #00f0ff; font-weight: 800; letter-spacing: 1px;">FOOTBALL SECTORS:</span>
+              <button type="button" class="subsector-btn" data-subkey="football_all" style="background: rgba(0, 240, 255, 0.18); border: 1px solid #00f0ff; color: #00f0ff; font-family: inherit; font-size: 11px; font-weight: 700; padding: 4px 10px; border-radius: 4px; cursor: pointer; transition: color 0.15s, border-color 0.15s;">
+                ★ All Football (Clubs + Terms)
+              </button>
+              <button type="button" class="subsector-btn" data-subkey="football_clubs" style="background: rgba(255, 255, 255, 0.04); border: 1px solid #334155; color: #94a3b8; font-family: inherit; font-size: 11px; font-weight: 700; padding: 4px 10px; border-radius: 4px; cursor: pointer; transition: color 0.15s, border-color 0.15s;">
+                🏆 World Clubs
+              </button>
+              <button type="button" class="subsector-btn" data-subkey="football_terms" style="background: rgba(255, 255, 255, 0.04); border: 1px solid #334155; color: #94a3b8; font-family: inherit; font-size: 11px; font-weight: 700; padding: 4px 10px; border-radius: 4px; cursor: pointer; transition: color 0.15s, border-color 0.15s;">
+                ⚡ Match Terms & Tactics
+              </button>
+            </div>
+
+            <!-- Active Sector Status Banner -->
+            <div id="active-sector-banner" style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px; font-size: 11.5px; color: #34d399; font-weight: 600;">
+              <span style="display: inline-block; width: 6px; height: 6px; background: #34d399; border-radius: 50%;"></span>
+              <span id="active-sector-text">Loaded sector: ⚽ All Football (Clubs + Terms)</span>
             </div>
 
             <!-- Text Box -->
-            <textarea id="custom-words-input" placeholder="Type or paste your words here (e.g.: planet galaxy rocket velocity orbit astronaut asteroid satellite cosmic eclipse)..." style="
+            <textarea id="custom-words-input" placeholder="Type or paste words here, or choose any topic sector above..." style="
               width: 100%;
-              height: 155px;
+              height: 140px;
               background: rgba(3, 8, 20, 0.95);
               border: 1.5px solid #1e3a5f;
               border-radius: 8px;
               color: #00f0ff;
               font-family: inherit;
-              font-size: 15px;
-              line-height: 1.5;
-              padding: 14px;
+              font-size: 13.5px;
+              line-height: 1.55;
+              padding: 12px 14px;
               outline: none;
               resize: vertical;
               box-sizing: border-box;
@@ -2508,7 +2902,7 @@
             "></textarea>
 
             <!-- Counter & Alert -->
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 8px; margin-bottom: 18px; min-height: 20px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 8px; margin-bottom: 16px; min-height: 20px;">
               <span id="custom-words-counter" style="font-size: 12px; color: #38bdf8; font-weight: 700;">0 unique words detected</span>
               <span id="custom-words-alert" style="font-size: 12px; color: #f87171; font-weight: 700; display: none;"></span>
             </div>
@@ -2526,7 +2920,7 @@
                 padding: 10px 18px;
                 border-radius: 6px;
                 cursor: pointer;
-                transition: all 0.2s;
+                transition: color 0.15s, border-color 0.15s;
               ">CANCEL</button>
 
               <button id="launch-custom-btn" type="button" style="
@@ -2541,7 +2935,7 @@
                 border-radius: 6px;
                 cursor: pointer;
                 box-shadow: 0 0 20px rgba(255, 119, 0, 0.4);
-                transition: all 0.2s;
+                transition: opacity 0.15s;
               ">START GAME</button>
             </div>
           </div>
@@ -2555,7 +2949,11 @@
         const closeBtn = document.getElementById('close-modal-x');
         const cancelBtn = document.getElementById('cancel-custom-btn');
         const launchBtn = document.getElementById('launch-custom-btn');
-        const presetBtns = modalOverlay.querySelectorAll('.preset-sample-btn');
+        const clearBtn = document.getElementById('clear-custom-btn');
+        const subsectorsPanel = document.getElementById('subsectors-panel');
+        const activeSectorText = document.getElementById('active-sector-text');
+        const sectorBtns = modalOverlay.querySelectorAll('.sector-btn');
+        const subsectorBtns = modalOverlay.querySelectorAll('.subsector-btn');
 
         // Focus text area
         setTimeout(() => textarea.focus(), 50);
@@ -2574,8 +2972,9 @@
             alertMsg.style.display = 'none';
             return 0;
           }
-          const rawWords = text.toUpperCase().replace(/[^A-Z\s]/g, ' ').split(/\s+/);
-          const uniqueWords = Array.from(new Set(rawWords.filter(w => w.length >= 2 && w.length <= 22)));
+          const noiseTokens = new Set(['FC', 'CF', 'CP', 'SC', 'AC', 'BC', 'VS', 'THE', 'AND', 'FOR', 'WITH', 'FROM']);
+          const rawWords = text.toUpperCase().replace(/[^A-Z\s]/g, ' ').split(/\s+/).map(w => w.trim()).filter(w => w.length >= 3 && w.length <= 18 && !noiseTokens.has(w));
+          const uniqueWords = Array.from(new Set(rawWords));
           counter.textContent = `${uniqueWords.length} unique word${uniqueWords.length === 1 ? '' : 's'} detected`;
           if (uniqueWords.length > 0) {
             alertMsg.style.display = 'none';
@@ -2585,22 +2984,113 @@
 
         textarea.addEventListener('input', updateCount);
 
-        // Preset click handlers
-        presetBtns.forEach(btn => {
-          btn.addEventListener('click', () => {
-            const type = btn.getAttribute('data-type');
-            if (type === 'space') {
-              textarea.value = 'galaxy nebula astronaut velocity orbit cosmos rocket satellite starship telemetry propulsion solar interstellar trajectory hyperdrive asteroid supernova quasar pulsar';
-            } else if (type === 'code') {
-              textarea.value = 'function variable const array object component interface promise async await import export return execute compile terminal algorithm syntax';
-            } else if (type === 'simple') {
-              textarea.value = 'cat dog sun tree moon river ocean forest mountain cloud fire water storm wind stone flower bird tiger lion';
-            } else if (type === 'clear') {
-              textarea.value = '';
+        // Load words helper
+        const loadSectorWords = (secKey, badgeLabel) => {
+          const sec = SECTORS[secKey];
+          if (!sec) return;
+          textarea.value = sec.words;
+          updateCount();
+          activeSectorText.textContent = `Loaded sector: ${badgeLabel || sec.badge}`;
+          activeSectorText.parentElement.style.display = 'flex';
+        };
+
+        // Select initial default sector (Football all)
+        loadSectorWords('football_all', '⚽ All Football (Clubs + Terms)');
+
+        // Sector button click handlers
+        sectorBtns.forEach(btn => {
+          // Hover color change only (no scale / shift)
+          btn.addEventListener('mouseenter', () => {
+            if (btn.getAttribute('data-active') !== 'true') {
+              btn.style.color = '#38bdf8';
+              btn.style.borderColor = '#0284c7';
             }
-            updateCount();
+          });
+          btn.addEventListener('mouseleave', () => {
+            if (btn.getAttribute('data-active') !== 'true') {
+              btn.style.color = '#cbd5e1';
+              btn.style.borderColor = '#334155';
+            }
+          });
+
+          btn.addEventListener('click', () => {
+            const key = btn.getAttribute('data-key');
+
+            // Reset all sector buttons
+            sectorBtns.forEach(b => {
+              b.removeAttribute('data-active');
+              b.style.background = 'rgba(255, 255, 255, 0.04)';
+              b.style.borderColor = '#334155';
+              b.style.color = '#cbd5e1';
+            });
+
+            // Highlight selected sector button
+            btn.setAttribute('data-active', 'true');
+            btn.style.background = 'rgba(0, 240, 255, 0.12)';
+            btn.style.borderColor = '#00f0ff';
+            btn.style.color = '#38bdf8';
+
+            if (key === 'football') {
+              subsectorsPanel.style.display = 'flex';
+              // Default to football_all
+              loadSectorWords('football_all', '⚽ All Football (Clubs + Terms)');
+              subsectorBtns.forEach(sb => {
+                const subkey = sb.getAttribute('data-subkey');
+                if (subkey === 'football_all') {
+                  sb.style.background = 'rgba(0, 240, 255, 0.18)';
+                  sb.style.borderColor = '#00f0ff';
+                  sb.style.color = '#00f0ff';
+                } else {
+                  sb.style.background = 'rgba(255, 255, 255, 0.04)';
+                  sb.style.borderColor = '#334155';
+                  sb.style.color = '#94a3b8';
+                }
+              });
+            } else {
+              subsectorsPanel.style.display = 'none';
+              loadSectorWords(key);
+            }
             textarea.focus();
           });
+        });
+
+        // Subsector buttons click handlers (for Football)
+        subsectorBtns.forEach(sbtn => {
+          sbtn.addEventListener('mouseenter', () => {
+            if (sbtn.getAttribute('data-active') !== 'true') {
+              sbtn.style.color = '#00f0ff';
+            }
+          });
+          sbtn.addEventListener('mouseleave', () => {
+            if (sbtn.getAttribute('data-active') !== 'true') {
+              sbtn.style.color = '#94a3b8';
+            }
+          });
+
+          sbtn.addEventListener('click', () => {
+            const subkey = sbtn.getAttribute('data-subkey');
+            subsectorBtns.forEach(sb => {
+              sb.removeAttribute('data-active');
+              sb.style.background = 'rgba(255, 255, 255, 0.04)';
+              sb.style.borderColor = '#334155';
+              sb.style.color = '#94a3b8';
+            });
+            sbtn.setAttribute('data-active', 'true');
+            sbtn.style.background = 'rgba(0, 240, 255, 0.18)';
+            sbtn.style.borderColor = '#00f0ff';
+            sbtn.style.color = '#00f0ff';
+
+            loadSectorWords(subkey);
+            textarea.focus();
+          });
+        });
+
+        // Clear text button
+        clearBtn.addEventListener('click', () => {
+          textarea.value = '';
+          updateCount();
+          activeSectorText.textContent = 'Custom words cleared. Type or select a sector above!';
+          textarea.focus();
         });
 
         // Close handlers
@@ -2622,7 +3112,7 @@
         launchBtn.addEventListener('click', () => {
           const count = updateCount();
           if (count === 0) {
-            alertMsg.textContent = 'Please enter at least 1 valid word (A-Z)!';
+            alertMsg.textContent = 'Please enter or pick at least 1 valid word (A-Z)!';
             alertMsg.style.display = 'inline';
             textarea.focus();
             return;
@@ -2792,6 +3282,25 @@
               </div>
             </div>
 
+            <!-- Social Media Logos Row (Logos Only) -->
+            <div style="display: flex; align-items: center; justify-content: flex-start; gap: 14px; padding-top: 6px; padding-bottom: 2px;">
+              <a href="https://instagram.com/dush_dev" target="_blank" rel="noopener noreferrer" title="Instagram" style="display: inline-flex; align-items: center; justify-content: center; width: 34px; height: 34px; border-radius: 9px; background: radial-gradient(circle at 30% 107%, #fdf497 0%, #fdf497 5%, #fd5949 45%, #d6249f 60%, #285AEB 90%); transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.15)'" onmouseout="this.style.transform='scale(1)'">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line></svg>
+              </a>
+              <a href="https://facebook.com/dush.dev" target="_blank" rel="noopener noreferrer" title="Facebook" style="display: inline-flex; align-items: center; justify-content: center; width: 34px; height: 34px; border-radius: 50%; background: #1877f2; transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.15)'" onmouseout="this.style.transform='scale(1)'">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="#ffffff"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
+              </a>
+              <a href="https://github.com/dush-dev" target="_blank" rel="noopener noreferrer" title="GitHub" style="display: inline-flex; align-items: center; justify-content: center; width: 34px; height: 34px; border-radius: 50%; background: #181a1f; border: 1px solid #334155; transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.15)'" onmouseout="this.style.transform='scale(1)'">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="#ffffff"><path fill-rule="evenodd" clip-rule="evenodd" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.53 1.032 1.53 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z"/></svg>
+              </a>
+              <a href="mailto:duskonpaul@gmail.com" title="Gmail (Click to email / copy)" style="display: inline-flex; align-items: center; justify-content: center; width: 34px; height: 34px; border-radius: 9px; background: #ffffff; border: 1px solid #cbd5e1; transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.15)'" onmouseout="this.style.transform='scale(1)'">
+                <svg width="20" height="20" viewBox="0 0 24 24"><path fill="#4285f4" d="M2.5 19h4V9.5l-4-3V19z"/><path fill="#34a853" d="M17.5 19h4V6.5l-4 3V19z"/><path fill="#ea4335" d="M17.5 9.5V4.5l-5.5 4.125L6.5 4.5v5L12 13.5l5.5-4z"/><path fill="#fbbc05" d="M21.5 6.5L17.5 9.5V4.5l2-1.5c1.1 0 2 .9 2 2v1.5z"/><path fill="#c5221f" d="M2.5 6.5l4 3V4.5l-2-1.5c-1.1 0-2 .9-2 2v1.5z"/></svg>
+              </a>
+              <a href="https://youtube.com/@dushi_dev" target="_blank" rel="noopener noreferrer" title="YouTube" style="display: inline-flex; align-items: center; justify-content: center; width: 34px; height: 34px; border-radius: 9px; background: #ff0000; transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.15)'" onmouseout="this.style.transform='scale(1)'">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="#ffffff"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>
+              </a>
+            </div>
+
             <!-- Footer Origin & Engine -->
             <div style="display: flex; align-items: center; justify-content: space-between; font-size: 12px; font-weight: 600; color: #94a3b8; padding-top: 8px; border-top: 1px solid rgba(255, 255, 255, 0.12);">
               <div>Engine: Phaser 3 + Web Audio Synth</div>
@@ -2957,6 +3466,8 @@
         this.enemies = [];
         this.lockedEnemy = null;
         this.activeWordsSet = new Set();
+        this.usedWordsThisGame = new Set(); // Strictly prevents words repeating in the same game
+        this.typedWordsThisGame = new Set(); // Tracks all words typed this game for 3-game cooldown
         this.spawnQueue = [];
 
         // Baseline defense threshold
@@ -3227,6 +3738,9 @@
 
         // Clean up on scene shutdown
         this.events.once('shutdown', () => {
+          if (this.typedWordsThisGame && this.typedWordsThisGame.size > 0 && typeof WordHistoryManager !== 'undefined') {
+            WordHistoryManager.recordGame(Array.from(this.typedWordsThisGame));
+          }
           window.removeEventListener('keydown', this.onKeyDown);
           if (this.spawnTimer) this.spawnTimer.remove();
           if (this.targetingBeamGfx) this.targetingBeamGfx.clear();
@@ -3270,52 +3784,112 @@
         sound.emp();
 
         // Camera FX: Screen flash & shake
-        this.cameras.main.flash(400, 255, 255, 255);
-        this.cameras.main.shake(500, 0.025);
+        this.cameras.main.flash(350, 0, 240, 255);
+        this.cameras.main.shake(450, 0.02);
 
-        // Visual Shockwave Ring from player position expanding over whole viewport
+        // Calculate Wider EMP circular blast radius from ship
+        const { width, height } = this.scale;
+        const empRadius = Math.max(540, Math.round(Math.max(width * 0.68, height * 0.70)));
+
+        // Visual Shockwave 1: Main expanding high-energy cyan shockwave ring
         const shockwave = this.add.circle(this.playerX, this.playerY, 20).setDepth(45);
-        shockwave.setStrokeStyle(8, 0x00f0ff, 1);
+        shockwave.setStrokeStyle(7, 0x00f0ff, 1.0);
+        shockwave.setFillStyle(0x00f0ff, 0.15);
 
+        const targetScale = empRadius / 20;
         this.tweens.add({
           targets: shockwave,
-          scale: 40,
+          scale: targetScale,
           alpha: 0,
-          duration: 650,
+          duration: 620,
           ease: 'Cubic.easeOut',
           onComplete: () => shockwave.destroy()
         });
 
-        // Floating EMP announcement
-        const empBanner = this.add.text(this.scale.width / 2, this.scale.height / 2, '⚡ EMP SHOCKWAVE DETONATED ⚡', {
+        // Visual Shockwave 2: Inner electric secondary pulse wave
+        const innerRipple = this.add.circle(this.playerX, this.playerY, 15).setDepth(46);
+        innerRipple.setStrokeStyle(4, 0xffffff, 0.95);
+        this.tweens.add({
+          targets: innerRipple,
+          scale: targetScale * 0.75,
+          alpha: 0,
+          duration: 460,
+          ease: 'Quad.easeOut',
+          onComplete: () => innerRipple.destroy()
+        });
+
+        // Visual Shockwave 3: Fast core electromagnetic flash
+        const coreFlash = this.add.circle(this.playerX, this.playerY, 30).setDepth(46);
+        coreFlash.setFillStyle(0xa5f3fc, 0.6);
+        this.tweens.add({
+          targets: coreFlash,
+          scale: targetScale * 0.35,
+          alpha: 0,
+          duration: 280,
+          ease: 'Sine.easeOut',
+          onComplete: () => coreFlash.destroy()
+        });
+
+        // Find all hostile crafts & mines located within the wider circular blast radius
+        const targetsToDestroy = this.enemies.filter(enemy => {
+          if (enemy.isDestroyed || !enemy.container) return false;
+          const dist = Phaser.Math.Distance.Between(this.playerX, this.playerY, enemy.container.x, enemy.container.y);
+          return dist <= empRadius;
+        });
+
+        // Sort by closest distance to player so nearest threats vaporize first
+        targetsToDestroy.sort((a, b) => {
+          const distA = Phaser.Math.Distance.Between(this.playerX, this.playerY, a.container.x, a.container.y);
+          const distB = Phaser.Math.Distance.Between(this.playerX, this.playerY, b.container.x, b.container.y);
+          return distA - distB;
+        });
+
+        // Floating EMP announcement reflecting nearby targets neutralized
+        const bannerText = targetsToDestroy.length > 0
+          ? `⚡ EMP BLAST: ${targetsToDestroy.length} NEARBY TARGETS NEUTRALIZED ⚡`
+          : '⚡ EMP DETONATED: NO TARGETS IN RANGE ⚡';
+
+        const empBanner = this.add.text(this.scale.width / 2, this.scale.height / 2, bannerText, {
           fontFamily: FontManager.getFontFamily(),
-          fontSize: '22px',
+          fontSize: '20px',
           fontWeight: '900',
           color: '#00f0ff',
           stroke: '#000000',
           strokeThickness: 4,
-          letterSpacing: 3
+          letterSpacing: 2
         }).setOrigin(0.5).setDepth(48);
 
         this.tweens.add({
           targets: empBanner,
-          scale: 1.3,
+          scale: 1.25,
           alpha: 0,
           duration: 900,
           ease: 'Sine.easeOut',
           onComplete: () => empBanner.destroy()
         });
 
-        // Release locked target & hide reticle
-        this.lockedEnemy = null;
-        this.reticle.setVisible(false);
-        this.updateTargetHUD();
+        // Release locked target only if it was caught within the EMP blast range
+        if (this.lockedEnemy && targetsToDestroy.includes(this.lockedEnemy)) {
+          this.lockedEnemy = null;
+          this.reticle.setVisible(false);
+          this.updateTargetHUD();
+        }
 
-        // Destroy every visible hostile craft & mine in a staggered chain reaction
-        const targetsToDestroy = [...this.enemies];
+        // Destroy nearby hostile crafts & mines within blast range in a staggered chain reaction
         targetsToDestroy.forEach((enemy, index) => {
           this.time.delayedCall(index * 35, () => {
-            if (!enemy.isDestroyed) {
+            if (!enemy.isDestroyed && enemy.container) {
+              // Electric arc connecting player ship to destroyed nearby target
+              const arc = this.add.graphics().setDepth(47);
+              arc.lineStyle(2, 0x00f0ff, 0.85);
+              arc.lineBetween(this.playerX, this.playerY, enemy.container.x, enemy.container.y);
+              this.tweens.add({
+                targets: arc,
+                alpha: 0,
+                duration: 180,
+                onComplete: () => arc.destroy()
+              });
+
               this.destroyEnemy(enemy, true); // true = killed by EMP (no cruiser mine spawn)
             }
           });
@@ -3513,6 +4087,9 @@
           });
           backBtn.on('pointerdown', () => {
             sound.lock();
+            if (this.typedWordsThisGame && this.typedWordsThisGame.size > 0 && typeof WordHistoryManager !== 'undefined') {
+              WordHistoryManager.recordGame(Array.from(this.typedWordsThisGame));
+            }
             if (this.score > 0 || this.enemiesDestroyed > 0) {
               const elapsedMinutes = Math.max(0.1, (this.time.now - this.gameStartTime) / 60000);
               const sessionWpm = Math.round((this.correctKeystrokes / 5) / elapsedMinutes);
@@ -3865,14 +4442,14 @@
 
         // Avoid starting letter collisions with current active words if possible
         const existingInitialLetters = new Set(
-          this.enemies.filter(e => !e.isDestroyed).map(e => e.word[0])
+          this.enemies.filter(e => !e.isDestroyed).map(e => e.word[0].toLowerCase())
         );
 
-        let word = getRandomWord(category, this.activeWordsSet);
-        if (existingInitialLetters.has(word[0])) {
-          for (let attempt = 0; attempt < 8; attempt++) {
-            const candidate = getRandomWord(category, this.activeWordsSet);
-            if (!existingInitialLetters.has(candidate[0])) {
+        let word = getRandomWord(category, this.activeWordsSet, this.usedWordsThisGame);
+        if (existingInitialLetters.has(word[0].toLowerCase())) {
+          for (let attempt = 0; attempt < 10; attempt++) {
+            const candidate = getRandomWord(category, this.activeWordsSet, this.usedWordsThisGame);
+            if (!existingInitialLetters.has(candidate[0].toLowerCase())) {
               word = candidate;
               break;
             }
@@ -3897,7 +4474,12 @@
           }
         }
 
+        const baseClean = word.toLowerCase().replace(/[^a-z]/g, '');
         this.activeWordsSet.add(word);
+        this.activeWordsSet.add(baseClean);
+        if (this.usedWordsThisGame) {
+          this.usedWordsThisGame.add(baseClean);
+        }
 
         // Typography sizing using FontManager settings (defaults to 24px)
         const isMono = FontManager.currentType === 'mono';
@@ -4065,11 +4647,22 @@
           'hyperdimensionalcore',
           'antidisestablishmentarianism'
         ];
-        let bossWord = bossWordsPool[(Math.floor(this.wave / 5) - 1) % bossWordsPool.length];
+        let bossWord = '';
+        const pack = WORD_PACKS[activeWordPackKey];
+        if (pack && pack.boss && pack.boss.length > 0) {
+          bossWord = getRandomWord('boss', this.activeWordsSet, this.usedWordsThisGame);
+        } else {
+          bossWord = bossWordsPool[(Math.floor(this.wave / 5) - 1) % bossWordsPool.length];
+        }
         if (this.wave >= 8) {
           bossWord = bossWord.charAt(0).toUpperCase() + bossWord.slice(1);
         }
+        const bossClean = bossWord.toLowerCase().replace(/[^a-z]/g, '');
         this.activeWordsSet.add(bossWord);
+        this.activeWordsSet.add(bossClean);
+        if (this.usedWordsThisGame) {
+          this.usedWordsThisGame.add(bossClean);
+        }
 
         const isMono = FontManager.currentType === 'mono';
         const fontSizeNum = FontManager.getFontSizeNumber();
@@ -4290,6 +4883,9 @@
             const targetEnemy = this.lockedEnemy;
             if (isFinal) {
               targetEnemy.isPendingDestroy = true;
+              if (this.typedWordsThisGame) {
+                this.typedWordsThisGame.add(targetEnemy.word.toLowerCase().replace(/[^a-z]/g, ''));
+              }
               this.lockedEnemy = null;
               this.reticle.setVisible(false);
             } else {
@@ -4338,6 +4934,9 @@
           const isFinal = target.typedIndex >= target.word.length;
           if (isFinal) {
             target.isPendingDestroy = true;
+            if (this.typedWordsThisGame) {
+              this.typedWordsThisGame.add(target.word.toLowerCase().replace(/[^a-z]/g, ''));
+            }
             this.lockedEnemy = null;
             this.reticle.setVisible(false);
           } else {
@@ -4585,7 +5184,12 @@
       // Destroy enemy with particle explosion, cruiser mine splitting, & floating score
       destroyEnemy(enemy, isEmp = false) {
         enemy.isDestroyed = true;
+        const enemyClean = enemy.word.toLowerCase().replace(/[^a-z]/g, '');
         this.activeWordsSet.delete(enemy.word);
+        this.activeWordsSet.delete(enemyClean);
+        if (!isEmp && this.typedWordsThisGame) {
+          this.typedWordsThisGame.add(enemyClean);
+        }
         this.enemiesDestroyed++;
 
         const x = enemy.container.x;
@@ -4880,6 +5484,9 @@
         };
 
         UserProgressManager.recordSession(summaryStats);
+        if (this.typedWordsThisGame && this.typedWordsThisGame.size > 0 && typeof WordHistoryManager !== 'undefined') {
+          WordHistoryManager.recordGame(Array.from(this.typedWordsThisGame));
+        }
 
         this.time.delayedCall(1100, () => {
           this.cameras.main.fade(400, 3, 6, 17, false, (cam, progress) => {
@@ -5405,7 +6012,7 @@
         }).setOrigin(0, 0).setDepth(10);
 
         // Section 3: MUSIC (Furaha)
-        const sec3Y = 366;
+        const sec3Y = 344;
         this.add.text(leftX, sec3Y, 'MUSIC', {
           fontFamily: FONT_CREDITS,
           fontSize: '17px',
@@ -5414,7 +6021,7 @@
           letterSpacing: 1.4
         }).setOrigin(0, 0).setDepth(10);
 
-        this.add.text(leftX, sec3Y + 28, 'Furaha', {
+        this.add.text(leftX, sec3Y + 26, 'Furaha', {
           fontFamily: FONT_CREDITS,
           fontSize: '28px',
           fontWeight: '500',
@@ -5422,8 +6029,64 @@
           letterSpacing: 0.6
         }).setOrigin(0, 0).setDepth(10);
 
+        // --------------------------------------------------------------------
+        // OVER ORIGINAL CONCEPT & ENGINE: SOCIALS (Logos Only)
+        // Instagram, Facebook, GitHub, Gmail, YouTube
+        // --------------------------------------------------------------------
+        const socialsY = 432;
+        const socialItems = [
+          { key: 'social_instagram', name: 'Instagram', url: 'https://www.instagram.com/dusky_one1' },
+          { key: 'social_facebook', name: 'Facebook', url: 'https://www.facebook.com/dash.creper' },
+          { key: 'social_github', name: 'GitHub', url: 'https://github.com/duskon' },
+          { key: 'social_gmail', name: 'Gmail', url: 'mailto:duskonpaul@gmail.com', email: 'duskonpaul@gmail.com' },
+          { key: 'social_youtube', name: 'YouTube', url: 'https://www.youtube.com/@duskonpaul' }
+        ];
+
+        const iconDisplaySize = 38;
+        const iconSpacing = 52; // Sleek row of icons only
+
+        socialItems.forEach((item, idx) => {
+          const ix = leftX + idx * iconSpacing + iconDisplaySize / 2;
+          const img = this.add.image(ix, socialsY, item.key)
+            .setDisplaySize(iconDisplaySize, iconDisplaySize)
+            .setDepth(12)
+            .setInteractive({ useHandCursor: true });
+
+          img.on('pointerdown', () => {
+            try {
+              sound.init();
+              sound.lock();
+            } catch(e) {}
+
+            if (item.email) {
+              try {
+                navigator.clipboard.writeText(item.email);
+              } catch(e) {}
+              const toast = this.add.text(leftX, socialsY - 26, `✓ ${item.email} COPIED`, {
+                fontFamily: FONT_CREDITS,
+                fontSize: '14px',
+                fontWeight: '600',
+                color: '#34d399'
+              }).setDepth(30);
+              this.time.delayedCall(1600, () => toast.destroy());
+            }
+
+            try {
+              const a = document.createElement('a');
+              a.href = item.url;
+              a.target = '_blank';
+              a.rel = 'noopener noreferrer';
+              document.body.appendChild(a);
+              a.click();
+              a.remove();
+            } catch(e) {
+              window.location.href = item.url;
+            }
+          });
+        });
+
         // Section 4: Engine (Dushi)
-        const sec4Y = 456;
+        const sec4Y = 488;
         this.add.text(leftX, sec4Y, 'ORIGINAL CONCEPT & ENGINE', {
           fontFamily: FONT_CREDITS,
           fontSize: '17px',
@@ -5432,7 +6095,7 @@
           letterSpacing: 1.4
         }).setOrigin(0, 0).setDepth(10);
 
-        this.add.text(leftX, sec4Y + 28, 'Dushi', {
+        this.add.text(leftX, sec4Y + 26, 'Dushi', {
           fontFamily: FONT_CREDITS,
           fontSize: '28px',
           fontWeight: '500',
@@ -5441,7 +6104,7 @@
         }).setOrigin(0, 0).setDepth(10);
 
         // Section 5: Tagline (Centered)
-        const sec5Y = 575;
+        const sec5Y = 582;
         this.add.text(width / 2, sec5Y, 'Made in Rwanda, Gihara ❤', {
           fontFamily: FONT_CREDITS,
           fontSize: '24px',
@@ -5465,7 +6128,7 @@
           });
         };
 
-        const backBtn = this.add.text(width / 2, 645, 'back to title', {
+        const backBtn = this.add.text(width / 2, 646, 'back to title', {
           fontFamily: FONT_CREDITS,
           fontSize: '34px',
           fontWeight: '500',
